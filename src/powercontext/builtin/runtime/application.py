@@ -3130,8 +3130,11 @@ class BuiltinRuntime:
         self.external_skills = ExternalSkillApplication(self)
         self.handoff = HandoffApplication(self)
         self.work = WorkApplication(self)
+        from powercontext.builtin.runtime.source_lifecycle import SourceLifecycleApplication
+
         self.memory = MemoryApplication(self)
         self.topic_memory = TopicMemoryApplication(self)
+        self.lifecycle = SourceLifecycleApplication(self)
         self.records = RecordApplication(self)
         self.prompts = PromptApplication(self)
         self.review = ReviewApplication(self)
