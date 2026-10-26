@@ -30,6 +30,7 @@ from powercontext.builtin.artifacts.experience import EXPERIENCE_INCUBATION_CURS
 from powercontext.builtin.artifacts.profile.models import PROFILE_SOURCE_WINDOW_BINDING
 from powercontext.builtin.artifacts.topic_memory import TOPIC_MEMORY_SOURCE_WINDOW_BINDING
 from powercontext.builtin.persistence.codec import load_model, stored_bytes
+from powercontext.builtin.persistence.cursors import SourceCursorRepository
 from powercontext.builtin.persistence.errors import (
     IdentityMismatchError,
     InvalidRepositoryArgumentError,
@@ -79,12 +80,20 @@ class SourceRepository:
         self,
         definitions: SourceDefinitionRegistry | Iterable[_AnySourceAdapter],
         /,
+        *,
+        count_thresholds: Mapping[str, int] | None = None,
     ) -> None:
         self._registry = (
             definitions
             if isinstance(definitions, SourceDefinitionRegistry)
             else SourceDefinitionRegistry.from_adapters(definitions)
         )
+        self._count_thresholds: dict[str, int] = dict(count_thresholds or {})
+
+    def count_threshold(self, binding_name: str, /) -> int | None:
+        """Return the configured pending Source count threshold for a binding, if any."""
+
+        return self._count_thresholds.get(binding_name)
 
     async def add(
         self,
@@ -169,8 +178,15 @@ class SourceRepository:
         # discoverable input atomically. Replayed Source identities do not dirty
         # a binding again. Disabled processors simply retain ordinary dirty.
         intents = ArtifactProcessingIntentRepository()
+        cursors = SourceCursorRepository() if self._count_thresholds else None
         for binding_name in SOURCE_PROCESSING_BINDINGS:
             await intents.mark_dirty(connection, scope_id, binding_name)
+            threshold = self._count_thresholds.get(binding_name)
+            if threshold is not None and cursors is not None:
+                cursor = await cursors.load(connection, scope_id, binding_name)
+                cursor_seq = 0 if cursor is None else cursor.cursor.sequence
+                if position - cursor_seq >= threshold:
+                    await intents.request_if_idle(connection, scope_id, binding_name)
         return StoredSource(ref=ref, value=source, journal_position=position), True
 
     async def get(

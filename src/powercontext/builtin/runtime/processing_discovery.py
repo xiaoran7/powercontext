@@ -48,10 +48,18 @@ async def enabled_profile_scopes(connection: AsyncConnection, scope_ids: tuple[s
 class SourceProcessingPendingProvider:
     """Inspect journal metadata, never Source bodies, prompts, or models."""
 
-    def __init__(self, database: AsyncDatabase, binding_name: str, artifact_family: str) -> None:
+    def __init__(
+        self,
+        database: AsyncDatabase,
+        binding_name: str,
+        artifact_family: str,
+        *,
+        count_threshold: int | None = None,
+    ) -> None:
         self._database = database
         self._binding = binding_name
         self._family = artifact_family
+        self._count_threshold = count_threshold
 
     async def reconcile(self, after_scope_id: str | None, limit: int, *, fence: ArtifactProcessingFence) -> str | None:
         heads = SOURCE_JOURNAL_HEADS_TABLE
@@ -68,9 +76,12 @@ class SourceProcessingPendingProvider:
             cursors = SourceCursorRepository()
             for scope, high in rows:
                 cursor = await cursors.load(connection, scope, self._binding)
-                if int(high) <= (0 if cursor is None else cursor.cursor.sequence):
+                cursor_sequence = 0 if cursor is None else cursor.cursor.sequence
+                if int(high) <= cursor_sequence:
                     continue
                 intent = await intents.load(connection, scope, self._binding, for_update=True)
                 if intent is None or intent.dirty_generation == intent.clean_generation:
                     await intents.mark_dirty(connection, scope, self._binding)
+                if self._count_threshold is not None and int(high) - cursor_sequence >= self._count_threshold:
+                    await intents.request_if_idle(connection, scope, self._binding)
         return str(rows[-1][0]) if len(rows) == limit else None

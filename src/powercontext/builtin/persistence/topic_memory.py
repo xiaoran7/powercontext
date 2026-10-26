@@ -487,6 +487,9 @@ class TopicMemoryRepository:
             admission=admission,
         )
         channels = await self.index.search(connection, scope_id, request)
+        from powercontext.builtin.runtime.source_lifecycle import filter_inactive_topic_memory_channels
+
+        channels = await filter_inactive_topic_memory_channels(connection, scope_id, channels)
         await self._check_retrieval_shape(connection)
         outcome = _fuse_topic_memory_rankings(query, channels, limit, mode=used_mode, admission=admission)
         return TopicMemorySearchResult(

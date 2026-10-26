@@ -1780,6 +1780,7 @@ async def _open_topic_memory_processor(spec: TopicMemoryWorkerSpec, scope_id: st
                 leases=contexts.repositories.processing_leases,
                 commit_authorizer=commit_authorizer,
                 source_window_limit=config.runtime.topic_memory_source_window_limit,
+                count_threshold=config.runtime.topic_memory_source_count_threshold,
             )
         finally:
             # A completed window leaves its own usage readable, matching the

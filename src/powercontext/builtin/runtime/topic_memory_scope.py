@@ -75,6 +75,7 @@ class TopicMemoryScopeProcessor:
         pending: ArtifactProcessingPendingRepository | None = None,
         commit_authorizer: TopicMemoryCommitAuthorizer | None = None,
         source_window_limit: int = MAX_TOPIC_MEMORY_WINDOW_SOURCES,
+        count_threshold: int | None = None,
     ) -> None:
         if type(source_window_limit) is not int or source_window_limit < 1:
             raise TopicMemoryGenerationError("invalid_window")
@@ -87,6 +88,7 @@ class TopicMemoryScopeProcessor:
         self._pending = ArtifactProcessingPendingRepository() if pending is None else pending
         self._commit_authorizer = commit_authorizer
         self._source_window_limit = min(source_window_limit, MAX_TOPIC_MEMORY_WINDOW_SOURCES)
+        self._count_threshold = count_threshold
 
     async def process(self, assignment: ArtifactProcessingWorkAssignment, /) -> ArtifactProcessingWorkerCompletion:
         if (
@@ -240,15 +242,22 @@ class TopicMemoryScopeProcessor:
                 cursor=position,
                 source_through_limit=target.source_through,
             )
+        head = await self._head(connection, assignment.scope_id)
         await self._intents.acknowledge(
             connection,
             assignment.scope_id,
             assignment.binding_name,
             target.target_request_generation,
             clean_generation=target.observed_dirty_generation
-            if covered and await self._head(connection, assignment.scope_id) <= target.source_through
+            if covered and head <= target.source_through
             else None,
         )
+        if self._count_threshold is not None and head - position >= self._count_threshold:
+            await self._intents.request_if_idle(
+                connection,
+                assignment.scope_id,
+                assignment.binding_name,
+            )
         result = await connection.execute(
             delete(TOPIC_MEMORY_PROCESSING_TARGETS_TABLE).where(*self._target_key(assignment, target))
         )

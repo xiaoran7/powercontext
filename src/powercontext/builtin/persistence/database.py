@@ -18,8 +18,8 @@ from __future__ import annotations
 
 import asyncio
 import time
-from collections.abc import AsyncIterator
-from contextlib import AbstractAsyncContextManager, asynccontextmanager, nullcontext
+from collections.abc import AsyncIterator, Callable
+from contextlib import AbstractAsyncContextManager, asynccontextmanager, nullcontext, suppress
 
 from aiosqlite import Connection as SQLiteConnection
 from sqlalchemy.exc import OperationalError
@@ -52,6 +52,12 @@ class AsyncDatabase:
         self._shared_connection_lock = asyncio.Lock() if shared_connection else None
         self._transaction_owner: asyncio.Task[object] | None = None
         self._shared_connection: AsyncConnection | None = None
+        self._binding_wake_hook: Callable[[str], None] | None = None
+
+    def set_binding_wake_hook(self, hook: Callable[[str], None] | None, /) -> None:
+        """Register an optional post-commit notification callback for processing bindings."""
+
+        self._binding_wake_hook = hook
 
     @classmethod
     def attach(cls, engine: AsyncEngine, /) -> AsyncDatabase:
@@ -85,6 +91,8 @@ class AsyncDatabase:
             if self._closed or self._closing:
                 raise DatabaseClosedError
             self._active_transactions += 1
+        wake_bindings: set[str] = set()
+        committed = False
         try:
             guard = self._shared_connection_lock if self._shared_connection_lock is not None else nullcontext()
             async with guard, self._engine.begin() as connection:
@@ -95,15 +103,22 @@ class AsyncDatabase:
                 if self._shared_connection_lock is not None:
                     self._transaction_owner = owner
                     self._shared_connection = connection
+                connection.info["_wake_bindings"] = wake_bindings
                 try:
                     yield connection
                 finally:
+                    connection.info.pop("_wake_bindings", None)
                     self._transaction_owner = None
                     self._shared_connection = None
+            committed = True
         finally:
             async with self._state_changed:
                 self._active_transactions -= 1
                 self._state_changed.notify_all()
+        if committed and wake_bindings and self._binding_wake_hook is not None:
+            for binding_name in sorted(wake_bindings):
+                with suppress(Exception):
+                    self._binding_wake_hook(binding_name)
 
     @asynccontextmanager
     async def _model_usage_transaction(self, timeout_seconds: float) -> AsyncIterator[AsyncConnection]:

@@ -656,6 +656,8 @@ async def open_builtin_runtime(
         runtime.artifact_processing_supervisor = await resources.enter_async_context(
             _open_artifact_processing_supervisor(config, contexts, processing_bindings, tracing=tracing)
         )
+        if runtime.artifact_processing_supervisor is not None:
+            contexts.database.set_binding_wake_hook(runtime.artifact_processing_supervisor.wake)
         contexts.profiles.operation_context = runtime._operation
         if config.handoff_report.enabled:
             runtime.handoff_report = HandoffReportApplication(
@@ -719,8 +721,12 @@ def _artifact_processing_bindings(  # noqa: C901 - validate and assemble one reg
         "profile": config.runtime.profile_schedule_enabled or None,
         "skill": None,
     }
+    count_thresholds = {
+        "memory": config.runtime.memory_source_count_threshold,
+        "topic-memory": config.runtime.topic_memory_source_count_threshold,
+    }
     for family, schedule in automatic.items():
-        if schedule is not None and family not in declared | registered:
+        if (schedule is not None or count_thresholds.get(family) is not None) and family not in declared | registered:
             if (
                 family == "topic-memory"
                 and config.runtime.artifact_processing_families is None
@@ -785,7 +791,12 @@ def _artifact_processing_bindings(  # noqa: C901 - validate and assemble one reg
                 timezone=config.runtime.profile_timezone if family == "profile" else "Asia/Shanghai",
                 pending_provider=None
                 if family == "skill"
-                else SourceProcessingPendingProvider(contexts.database, binding, family),
+                else SourceProcessingPendingProvider(
+                    contexts.database,
+                    binding,
+                    family,
+                    count_threshold=count_thresholds.get(family),
+                ),
                 automatic_scope_filter=enabled_profile_scopes if family == "profile" else None,
             )
         )
@@ -947,6 +958,8 @@ async def open_builtin_contexts(
                 model_usage_queue_capacity=config.runtime.model_usage_queue_capacity,
                 model_usage_write_timeout_seconds=config.runtime.model_usage_write_timeout_seconds,
                 model_usage_flush_timeout_seconds=config.runtime.model_usage_flush_timeout_seconds,
+                memory_source_count_threshold=config.runtime.memory_source_count_threshold,
+                topic_memory_source_count_threshold=config.runtime.topic_memory_source_count_threshold,
                 source_registry=source_registry,
                 cursor_secret=cursor_secret,
                 tracing=tracing,
@@ -1024,6 +1037,8 @@ async def open_builtin_contexts(
             model_usage_queue_capacity=config.runtime.model_usage_queue_capacity,
             model_usage_write_timeout_seconds=config.runtime.model_usage_write_timeout_seconds,
             model_usage_flush_timeout_seconds=config.runtime.model_usage_flush_timeout_seconds,
+            memory_source_count_threshold=config.runtime.memory_source_count_threshold,
+            topic_memory_source_count_threshold=config.runtime.topic_memory_source_count_threshold,
             source_registry=source_registry,
             cursor_secret=cursor_secret,
             tracing=tracing,

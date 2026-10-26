@@ -137,9 +137,38 @@ class ArtifactProcessingIntentRepository:
             .where(table.c.scope_id == scope_id, table.c.binding_name == binding_name)
             .values(requested_generation=table.c.requested_generation + 1)
         )
+        wake_bindings = connection.info.get("_wake_bindings")
+        if isinstance(wake_bindings, set):
+            wake_bindings.add(binding_name)
         return cast(
             StoredArtifactProcessingIntent, await self.load(connection, scope_id, binding_name, for_update=True)
         )
+
+    async def request_if_idle(
+        self, connection: AsyncConnection, scope_id: str, binding_name: str, /
+    ) -> StoredArtifactProcessingIntent:
+        await self.ensure(connection, scope_id, binding_name)
+        current = cast(
+            StoredArtifactProcessingIntent, await self.load(connection, scope_id, binding_name, for_update=True)
+        )
+        if current.requested_generation <= current.handled_generation:
+            table = ARTIFACT_PROCESSING_INTENTS_TABLE
+            await connection.execute(
+                update(table)
+                .where(
+                    table.c.scope_id == scope_id,
+                    table.c.binding_name == binding_name,
+                    table.c.requested_generation <= table.c.handled_generation,
+                )
+                .values(requested_generation=table.c.handled_generation + 1)
+            )
+            current = cast(
+                StoredArtifactProcessingIntent, await self.load(connection, scope_id, binding_name, for_update=True)
+            )
+        wake_bindings = connection.info.get("_wake_bindings")
+        if isinstance(wake_bindings, set):
+            wake_bindings.add(binding_name)
+        return current
 
     async def acknowledge(
         self,
