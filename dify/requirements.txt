@@ -1,0 +1,9 @@
+fastapi>=0.110.0
+uvicorn>=0.29.0
+pymysql>=1.1.0
+jieba>=0.42.1
+rank-bm25>=0.2.2
+fastembed>=0.3.0
+pydantic>=2.6.0
+pyyaml>=6.0.1
+httpx>=0.27.0

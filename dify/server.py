@@ -163,6 +163,17 @@ async def get_detective_session_state(session_id: str):
     return detective_engine.get_or_create_session(session_id)
 
 
+@app.post("/api/game/reset/{session_id}")
+async def reset_detective_session_state(session_id: str):
+    """恢复指定侦探会话至初始状态，便于评审重复执行多轮验证样例"""
+    detective_engine.sessions.pop(session_id, None)
+    return {
+        "status": "reset",
+        "session_id": session_id,
+        "initial_state": detective_engine.get_or_create_session(session_id),
+    }
+
+
 @app.get("/api/corpus")
 async def get_corpus():
     eng = get_engine()

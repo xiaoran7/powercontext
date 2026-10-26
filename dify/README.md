@@ -81,12 +81,15 @@ python server.py
    - **API Key**: `dify-seekdb-2026-secret`
    - **Knowledge ID**: `seekdb-hybrid-kb`
 
-### 3. 运行自动化测试套件
+### 3. 多轮验证样例执行与初始状态恢复
 
-```bash
-pytest dify/test_dify.py -v
-```
+完整的多轮输入输出验证样本记录在 [`verification_sample.json`](./verification_sample.json) 中：
+- **恢复初始状态（便于重复验证）**：
+  ```bash
+  curl -X POST http://127.0.0.1:8089/api/game/reset/sample-detective-2026
+  ```
+- **运行自动化验收测试**：
+  ```bash
+  pytest dify/test_dify.py -v
+  ```
 
-完整的多轮输入输出验证样本记录在 [`verification_sample.json`](./verification_sample.json) 中。
-
-OB-P:xI1C-CXPJXT4ztVpZDY6_A
