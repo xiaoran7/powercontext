@@ -1,0 +1,16 @@
+{
+  "project": "ScholarPulse：基于 Qoder × OceanBase SeekDB × PowerContext 的论文精读与间隔复习助手",
+  "team_verification": "OB-P:xI1C-CXPJXT4ztVpZDY6_A",
+  "seekdb_endpoint": "100.72.34.104:2881",
+  "sample_request": {
+    "research_question": "SeekDB Delta HNSW 与 PowerContext 字节预算证据筛选如何协同？",
+    "max_bytes": 1400
+  },
+  "sample_output_summary": {
+    "prepared_context_envelope": "BEGIN_POWERCONTEXT_PREPARED_CONTEXT_V1 ... END_POWERCONTEXT_PREPARED_CONTEXT_V1",
+    "prepared_context_bytes_within_budget": true,
+    "matched_papers": ["PAPER-VSAG-01", "PAPER-PC-02", "PAPER-RRF-03"],
+    "flashcards_generated": 3,
+    "handoff_schema": "powercontext.handoff.v1"
+  }
+}

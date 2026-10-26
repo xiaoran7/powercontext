@@ -1,0 +1,197 @@
+app:
+  description: "星海迷局：AI 赛博侦探与多轮推演剧场 — 基于 Dify × OceanBase SeekDB 单阶段 RRF 混合检索 × PowerContext 证据预算装配的交互式悬疑推理游戏 (OB-P:xI1C-CXPJXT4ztVpZDY6_A)"
+  icon: "🕵️"
+  icon_background: "#1E293B"
+  mode: advanced-chat
+  name: "星海迷局：AI 赛博侦探剧场 (SeekDB × PowerContext)"
+  use_icon_as_answer_icon: true
+kind: app
+version: 0.1.5
+workflow:
+  conversation_variables:
+    - description: "玩家当前破案进度百分比"
+      id: "var-deduction-progress"
+      name: "deduction_progress"
+      value: 0
+      value_type: number
+    - description: "已击穿的不在场证明列表"
+      id: "var-contradictions"
+      name: "contradictions_found"
+      value: []
+      value_type: array[string]
+  environment_variables:
+    - description: "SeekDB + PowerContext 侦探后端服务地址"
+      id: "env-backend-url"
+      name: "SEEKDB_DETECTIVE_BACKEND_URL"
+      value: "http://127.0.0.1:8089"
+      value_type: string
+    - description: "Dify 外部知识库鉴权密钥"
+      id: "env-api-key"
+      name: "SEEKDB_EXTERNAL_API_KEY"
+      value: "dify-seekdb-2026-secret"
+      value_type: string
+  features:
+    file_upload:
+      enabled: false
+    opening_statement: "欢迎来到轨道空间站「星海七号」！凌晨 02:15，零重力机房的核心量子向量密钥离奇失窃。三位嫌疑人——首席向量架构师【林维】、记忆中枢安全官【苏晴】、具身运维工程师【陈默】——均声称拥有完美不在场证明。\n\n请输入你的【搜证/审讯指令】（例如：`调取 HNSW 快照与 batch_knn 日志质问林维` 或 `检查 PreparedContext 增量包追问苏晴`），我将同步调用 **OceanBase SeekDB 混合检索** 与 **PowerContext 证据引擎** 助你破获真相！"
+    suggested_questions:
+      - "调取 HNSW 快照与 batch_knn 门禁日志质问林维"
+      - "核查 Scope 权限与 PreparedContext 增量包追问苏晴"
+      - "检索机器人轨迹质检与 RRF 巡检记录盘问陈默"
+    suggested_questions_after_answer:
+      enabled: true
+  graph:
+    edges:
+      - id: "edge-start-to-kr"
+        source: "node-start"
+        sourceHandle: "source"
+        target: "node-seekdb-retrieval"
+        targetHandle: "target"
+      - id: "edge-kr-to-powercontext"
+        source: "node-seekdb-retrieval"
+        sourceHandle: "source"
+        target: "node-powercontext-turn"
+        targetHandle: "target"
+      - id: "edge-pc-to-llm"
+        source: "node-powercontext-turn"
+        sourceHandle: "source"
+        target: "node-detective-llm"
+        targetHandle: "target"
+      - id: "edge-llm-to-answer"
+        source: "node-detective-llm"
+        sourceHandle: "source"
+        target: "node-answer"
+        targetHandle: "target"
+    nodes:
+      - data:
+          desc: "接收玩家的侦探审讯或搜证指令以及目标嫌疑人代号"
+          selected: false
+          title: "玩家侦探行动输入"
+          type: start
+          variables:
+            - label: "目标嫌疑人 (lin_wei / su_qing / chen_mo)"
+              max_length: 32
+              options:
+                - "lin_wei"
+                - "su_qing"
+                - "chen_mo"
+              required: true
+              type: select
+              variable: "suspect_target"
+            - label: "侦探会话 ID"
+              max_length: 64
+              options: []
+              required: false
+              type: text-input
+              variable: "session_id"
+        id: "node-start"
+        position:
+          x: 80
+          y: 240
+        type: custom
+      - data:
+          dataset_ids:
+            - "seekdb-hybrid-kb"
+          desc: "通过 Dify External Knowledge API 调用 OceanBase SeekDB (VSAG HNSW + BM25 RRF) 检索案件技术卷宗"
+          query_variable_selector:
+            - "sys"
+            - "query"
+          retrieval_mode: multiple
+          multiple_retrieval_config:
+            top_k: 4
+            score_threshold: 0.01
+            reranking_enable: true
+          selected: false
+          title: "SeekDB 向量+全文混合检索"
+          type: knowledge-retrieval
+        id: "node-seekdb-retrieval"
+        position:
+          x: 380
+          y: 240
+        type: custom
+      - data:
+          authorization:
+            config: null
+            type: no-auth
+          body:
+            data:
+              - key: "session_id"
+                type: text
+                value: "{{#node-start.session_id#}}"
+              - key: "suspect_target"
+                type: text
+                value: "{{#node-start.suspect_target#}}"
+              - key: "player_action"
+                type: text
+                value: "{{#sys.query#}}"
+              - key: "max_bytes"
+                type: text
+                value: "1600"
+            type: json
+          desc: "调用 PowerContext 侦探引擎：固化 CAPTURED Source、提炼带字符偏移的 MemoryCitation、并在字节预算内装配 PreparedContext"
+          headers: "Content-Type: application/json"
+          method: post
+          params: ""
+          selected: false
+          timeout:
+            connect: 10
+            read: 30
+            write: 10
+          title: "PowerContext 线索固化与预算装配"
+          type: http-request
+          url: "{{#env.SEEKDB_DETECTIVE_BACKEND_URL#}}/api/game/turn"
+        id: "node-powercontext-turn"
+        position:
+          x: 680
+          y: 240
+        type: custom
+      - data:
+          context:
+            enabled: true
+            variable_selector:
+              - "node-seekdb-retrieval"
+              - "result"
+          desc: "基于 SeekDB 混合检索卷宗与 PowerContext 装配的 PreparedContext 进行赛博侦探剧情推演"
+          model:
+            completion_params:
+              temperature: 0.6
+              max_tokens: 1024
+            mode: chat
+            name: "MiniMax-M2.7"
+            provider: "openai_api_compatible"
+          prompt_template:
+            - id: "sys-prompt"
+              role: system
+              text: |
+                你是《星海迷局：深空算力中枢失窃案》的 AI 赛博侦探剧场主持人（Game Master）。
+                请严格依据以下两部分真实上下文生成极具沉浸感的审讯对白、证据碰撞结果与下一步侦查建议：
+                1. 【OceanBase SeekDB 混合检索卷宗】：{{#context#}}
+                2. 【PowerContext 证据预算装配信封 (PreparedContext V1)】：
+                {{#node-powercontext-turn.body#}}
+
+                输出要求：
+                - 先展示嫌疑人面对铁证时的神态变化与证词交锋；
+                - 明确引用 PowerContext 产出的 `citation`（源 ID 与字符偏移区间）与 SeekDB RRF 混合检索得分；
+                - 在末尾给出当前破案进度百分比与 2 条下一步追问建议。
+            - id: "user-prompt"
+              role: user
+              text: "目标嫌疑人：{{#node-start.suspect_target#}}\n玩家侦查行动：{{#sys.query#}}"
+          selected: false
+          title: "赛博侦探剧情推演生成"
+          type: llm
+        id: "node-detective-llm"
+        position:
+          x: 980
+          y: 240
+        type: custom
+      - data:
+          answer: "{{#node-detective-llm.text#}}"
+          desc: "向玩家输出本轮审讯剧情、证据溯源卡片与破案进度"
+          selected: false
+          title: "侦探剧场响应输出"
+          type: answer
+        id: "node-answer"
+        position:
+          x: 1280
+          y: 240
+        type: custom

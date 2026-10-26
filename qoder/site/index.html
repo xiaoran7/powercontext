@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ScholarPulse | Qoder × OceanBase SeekDB × PowerContext 论文精读与自适应闪卡助手</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --accent: #38bdf8;
+      --emerald: #10b981;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 28px;
+    }
+    .container { max-width: 1120px; margin: 0 auto; }
+    header {
+      border: 1px solid var(--border);
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      border-radius: 14px;
+      padding: 24px 28px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--emerald);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 20px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    h1 { font-size: 22px; margin-bottom: 6px; }
+    h2 { font-size: 16px; color: var(--accent); margin-bottom: 14px; }
+    .search-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    input[type="text"] {
+      flex: 1;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #0b1120;
+      color: var(--text);
+      font-size: 14px;
+    }
+    button {
+      padding: 10px 18px;
+      border-radius: 8px;
+      border: none;
+      background: var(--accent);
+      color: #0f172a;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    pre {
+      background: #0b1120;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 12.5px;
+      overflow-x: auto;
+      color: #e2e8f0;
+      white-space: pre-wrap;
+    }
+    .flashcard {
+      border: 1px solid var(--border);
+      background: #0b1120;
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .flashcard-q { font-weight: 600; color: var(--accent); margin-bottom: 6px; }
+    .flashcard-a { font-size: 13.5px; color: var(--text); }
+    footer {
+      margin-top: 24px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>ScholarPulse：Qoder × OceanBase SeekDB × PowerContext 论文精读与间隔复习助手</h1>
+        <p style="color: var(--muted); font-size: 13.5px;">
+          单 SQL 向量+全文双索引混合召回 · 字节预算内证据区间装配 (PreparedContext V1) · 自适应科研闪卡生成
+        </p>
+      </div>
+      <span class="badge">SeekDB 100.72.34.104:2881 | Qoder Sites Ready</span>
+    </header>
+
+    <div class="grid">
+      <div class="card">
+        <h2>1. 科研问题混合检索与 PowerContext 证据简报装配</h2>
+        <div class="search-bar">
+          <input id="query-input" type="text" value="SeekDB Delta HNSW 与 PowerContext 字节预算证据筛选如何协同？" />
+          <button id="btn-run" onclick="runBrief()">生成精读简报</button>
+        </div>
+        <pre id="brief-output">BEGIN_POWERCONTEXT_PREPARED_CONTEXT_V1
+scope_id: scope:qoder:scholar-pulse
+research_question: SeekDB Delta HNSW 与 PowerContext 字节预算证据筛选如何协同？
+evidence_spans:
+- [PAPER-VSAG-01] 双层 HNSW（Delta + Snapshot）兼顾毫秒级实时写入可见性与高吞吐近似最近邻（ANN）检索。 | SeekDB integrates the VSAG library to maintain a two-tier HNSW architecture... (citation=PAPER-VSAG-01[0:150])
+- [PAPER-PC-02] 在严格 UTF-8 字节预算内定位原文高相关子区间 [start:end] 并附带可回查的 MemoryCitation。 | Given a query and a strict max_bytes UTF-8 budget, PowerContext ranks active... (citation=PAPER-PC-02[0:150])
+- [PAPER-RRF-03] RRF（k=60）利用倒数排名平滑融合 BM25 词法匹配与 HNSW 向量距离，消除异构分值量纲差异。 | Combining BM25 full-text scores with cosine distance requires rank-based... (citation=PAPER-RRF-03[0:150])
+END_POWERCONTEXT_PREPARED_CONTEXT_V1</pre>
+      </div>
+
+      <div class="card">
+        <h2>2. 自适应间隔复习闪卡 (Spaced-Repetition Flashcards)</h2>
+        <div id="flashcards-box">
+          <div class="flashcard">
+            <div class="flashcard-q">Q1 [PAPER-VSAG-01]: SeekDB 如何同时保障新增向量的实时可查性与大规模图索引的查询吞吐？</div>
+            <div class="flashcard-a">A: 采用 Delta HNSW 承接实时增量写入，并通过后台异步 Compaction 合并至只读优化的 Snapshot HNSW。</div>
+          </div>
+          <div class="flashcard">
+            <div class="flashcard-q">Q2 [PAPER-PC-02]: PowerContext 在上下文窗口受限时如何避免整段长记忆截断导致的证据丢失？</div>
+            <div class="flashcard-a">A: 开启 evidence_selection=True，围绕查询词提取精确字符区间 [start:end] 并封装为带 MemoryCitation 的 PreparedContext V1 信封。</div>
+          </div>
+          <div class="flashcard">
+            <div class="flashcard-q">Q3 [PAPER-RRF-03]: 为什么在混合检索中常使用 RRF（倒数排名融合）而非直接将 BM25 分数与余弦相似度线性相加？</div>
+            <div class="flashcard-a">A: BM25 无上界且受词频分布影响大，而余弦相似度位于 [-1,1]，RRF 基于次序融合（1/(k+rank)）无需分值归一化即可稳定校准。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      2026 OceanBase AI 数据库大赛 · Qoder 赛题交付作品 | 验证行：OB-P:xI1C-CXPJXT4ztVpZDY6_A
+    </footer>
+  </div>
+
+  <script>
+    async function runBrief() {
+      const q = document.getElementById('query-input').value.trim();
+      if (!q) return;
+      try {
+        const resp = await fetch('/api/scholar/brief', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ research_question: q, max_bytes: 1600 })
+        });
+        if (!resp.ok) return;
+        const data = await resp.json();
+        document.getElementById('brief-output').textContent = data.prepared_context;
+        const box = document.getElementById('flashcards-box');
+        box.innerHTML = data.flashcards.map((fc, i) => `
+          <div class="flashcard">
+            <div class="flashcard-q">Q${i+1} [${fc.doc_id}]: ${fc.question}</div>
+            <div class="flashcard-a">A: ${fc.answer}</div>
+          </div>
+        `).join('');
+      } catch (e) {
+        console.log('Static Qoder Sites preview mode active.');
+      }
+    }
+  </script>
+</body>
+</html>

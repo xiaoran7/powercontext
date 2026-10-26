@@ -1,0 +1,48 @@
+{
+  "project": "星海迷局：AI 赛博侦探与多轮推演剧场 (Dify × OceanBase SeekDB × PowerContext)",
+  "team_verification": "OB-P:xI1C-CXPJXT4ztVpZDY6_A",
+  "dify_dsl_file": "dify_cyber_detective_app.yml",
+  "seekdb_endpoint": "100.72.34.104:2881",
+  "validation_turns": [
+    {
+      "turn": 1,
+      "input": {
+        "session_id": "sample-detective-2026",
+        "suspect_target": "lin_wei",
+        "player_action": "调取 HNSW 快照与 dbms_vector.batch_knn 门禁日志质问林维",
+        "max_bytes": 1200
+      },
+      "output_summary": {
+        "contradiction_unlocked": true,
+        "matched_triggers": ["HNSW", "快照", "batch_knn", "日志", "门禁", "向量"],
+        "deduction_progress": 35,
+        "seekdb_top_hit_title": "AMD 赛题聚焦：dbms_vector.batch_knn 批量向量检索优化",
+        "prepared_context_envelope": "BEGIN_POWERCONTEXT_PREPARED_CONTEXT_V1 ... END_POWERCONTEXT_PREPARED_CONTEXT_V1",
+        "citation_verified": true
+      }
+    },
+    {
+      "turn": 2,
+      "input": {
+        "session_id": "sample-detective-2026",
+        "suspect_target": "su_qing",
+        "player_action": "核查 Scope 权限边界与 PreparedContext 增量包外发记录追问苏晴",
+        "max_bytes": 1200
+      },
+      "output_summary": {
+        "contradiction_unlocked": true,
+        "matched_triggers": ["Scope", "权限", "PreparedContext"],
+        "deduction_progress": 70,
+        "ready_for_indictment": true
+      }
+    }
+  ],
+  "final_handoff": {
+    "schema": "powercontext.handoff.v1",
+    "case_solved": true,
+    "contradictions_found": [
+      "林维（首席向量架构师）",
+      "苏晴（记忆中枢安全官）"
+    ]
+  }
+}

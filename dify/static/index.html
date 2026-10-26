@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dify × SeekDB | 混合检索 (Hybrid Search) 与 Rerank 精排控制台</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary: #0284c7;
+      --primary-light: #e0f2fe;
+      --primary-dark: #0369a1;
+      --accent: #38bdf8;
+      --accent-subtle: #f0f9ff;
+      --bg: #f8fafc;
+      --surface: rgba(255, 255, 255, 0.94);
+      --border: rgba(226, 232, 240, 0.85);
+      --border-focus: #38bdf8;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --success: #10b981;
+      --success-light: #ecfdf5;
+      --warning: #f59e0b;
+      --warning-light: #fffbeb;
+      --purple: #8b5cf6;
+      --purple-light: #f5f3ff;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+      --shadow-card: 0 4px 16px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -2px rgba(15, 23, 42, 0.03);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .bg-accent-layer {
+      position: fixed;
+      top: 0; left: 0; right: 0; height: 260px;
+      background: radial-gradient(ellipse at top left, rgba(2, 132, 199, 0.1) 0%, transparent 70%),
+                  radial-gradient(ellipse at top right, rgba(139, 92, 246, 0.08) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+      will-change: transform;
+      transform: translateZ(0);
+    }
+
+    .container {
+      max-width: 1440px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 20px 24px 40px;
+      position: relative;
+      z-index: 1;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #0284c7 0%, #8b5cf6 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 19px;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+    }
+
+    .brand-text h1 {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-text p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .badges-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .badge-primary { background: var(--primary-light); color: var(--primary-dark); border-color: rgba(2, 132, 199, 0.2); }
+    .badge-success { background: var(--success-light); color: #065f46; border-color: rgba(16, 185, 129, 0.2); }
+    .badge-purple { background: var(--purple-light); color: #6d28d9; border-color: rgba(139, 92, 246, 0.2); }
+    .badge-dot { width: 7px; height: 7px; border-radius: 50%; background-color: currentColor; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow-card);
+      margin-bottom: 20px;
+    }
+
+    /* 控制面板 */
+    .control-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr auto;
+      gap: 16px;
+      align-items: end;
+      margin-bottom: 12px;
+    }
+
+    @media (max-width: 1024px) {
+      .control-grid { grid-template-columns: 1fr; }
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 6px;
+    }
+
+    input[type="text"], select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-family: inherit;
+      background: #ffffff;
+      color: var(--text-main);
+      transition: all 0.2s ease;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      color: white;
+      box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(2, 132, 199, 0.35);
+    }
+
+    .slider-box {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .range-input {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: #e2e8f0;
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    .range-input::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+    }
+
+    .pill-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .pill {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: #f1f5f9;
+      color: var(--text-muted);
+      cursor: pointer;
+      border: 1px solid rgba(226, 232, 240, 0.8);
+      transition: all 0.15s ease;
+    }
+
+    .pill:hover {
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      border-color: #38bdf8;
+    }
+
+    /* 四列对比面板 */
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 1200px) {
+      .comparison-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 680px) {
+      .comparison-grid { grid-template-columns: 1fr; }
+    }
+
+    .column-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .column-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      margin-bottom: 12px;
+      border-bottom: 2px solid;
+    }
+
+    .col-vec .column-header { border-color: #0284c7; }
+    .col-bm25 .column-header { border-color: #10b981; }
+    .col-rrf .column-header { border-color: #f59e0b; }
+    .col-rerank .column-header { border-color: #8b5cf6; }
+
+    .column-title {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .item-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      margin-bottom: 10px;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .item-card:hover {
+      border-color: #38bdf8;
+      box-shadow: 0 2px 8px rgba(56, 189, 248, 0.1);
+    }
+
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .item-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .item-score {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 8px;
+      white-space: nowrap;
+    }
+
+    .score-vec { background: var(--primary-light); color: var(--primary-dark); }
+    .score-bm25 { background: var(--success-light); color: #065f46; }
+    .score-rrf { background: var(--warning-light); color: #92400e; }
+    .score-rerank { background: var(--purple-light); color: #6d28d9; }
+
+    .item-body {
+      font-size: 12px;
+      color: #334155;
+      line-height: 1.4;
+      margin-bottom: 8px;
+    }
+
+    .item-meta {
+      display: flex;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      flex-wrap: wrap;
+    }
+
+    .delta-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+    .delta-up { background: #dcfce7; color: #15803d; }
+    .delta-same { background: #f1f5f9; color: #64748b; }
+
+    /* Dify API 联调视窗 */
+    .dify-api-box {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 14px;
+      border-radius: var(--radius-sm);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      overflow-x: auto;
+      max-height: 220px;
+    }
+
+    .terminal-cmd { color: #38bdf8; }
+    .terminal-res { color: #34d399; }
+
+    footer {
+      margin-top: auto;
+      text-align: center;
+      padding: 24px 0 12px;
+      font-size: 12px;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-accent-layer"></div>
+
+  <div class="container">
+    <header>
+      <div class="brand">
+        <div class="brand-logo">D</div>
+        <div class="brand-text">
+          <h1>Dify × SeekDB | 混合检索 (Hybrid Search) 与 Rerank 精排控制台</h1>
+          <p>2026 OceanBase 数据库大赛生态赛道 · 课件标杆流水线与外部知识库 API 实现</p>
+        </div>
+      </div>
+      <div class="badges-row">
+        <span class="badge badge-primary"><span class="badge-dot"></span> SeekDB: 100.72.34.104</span>
+        <span class="badge badge-purple"><span class="badge-dot"></span> BGE-Small-ZH (512-dim)</span>
+        <span class="badge badge-success"><span class="badge-dot"></span> BM25Okapi (Jieba)</span>
+        <span class="badge badge-primary"><span class="badge-dot"></span> Dify API: POST /retrieval</span>
+      </div>
+    </header>
+
+    <!-- 控制面板 -->
+    <div class="card">
+      <div class="control-grid">
+        <div>
+          <label for="search-query">查询内容 (Query)</label>
+          <input type="text" id="search-query" value="AMD ROCm 批量向量加速接口是什么？">
+        </div>
+        <div>
+          <label for="filter-source">元数据标量过滤 (WHERE source)</label>
+          <select id="filter-source">
+            <option value="all">全部来源 (All Sources)</option>
+            <option value="official_docs">官方规范 (official_docs)</option>
+            <option value="code_samples">代码样例 (code_samples)</option>
+            <option value="community_qa">社区问答 (community_qa)</option>
+          </select>
+        </div>
+        <div class="slider-box">
+          <div class="slider-header">
+            <span>向量权重: <b id="lbl-vec-w">0.6</b></span>
+            <span>BM25权重: <b id="lbl-bm-w">0.4</b></span>
+          </div>
+          <input type="range" id="weight-slider" class="range-input" min="0" max="100" value="60">
+        </div>
+        <button id="btn-run-search" class="btn btn-primary">
+          <span>🚀 执行混合检索与精排流水线</span>
+        </button>
+      </div>
+
+      <!-- 快捷经典提问 -->
+      <div>
+        <div style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">经典必现考题测试：</div>
+        <div class="pill-list">
+          <span class="pill" onclick="setQuery('AMD ROCm 批量向量加速接口是什么？')">精确 API 召回：dbms_vector.batch_knn (检验 BM25 优势)</span>
+          <span class="pill" onclick="setQuery('如何解决纯向量检索漏词与纯关键词缺语义的问题？')">语义混合对比：纯向量 vs BM25 互补 (检验 RRF 融合)</span>
+          <span class="pill" onclick="setQuery('Dify 混合检索满分流水线配置规范')">课件标准：Top 20 粗排 + Top 5 精排</span>
+          <span class="pill" onclick="setQuery('SeekDB 的 vsag 引擎如何实现单阶段过滤？')">SeekDB 内核：Single-stage filtered search</span>
+        </div>
+      </div>
+
+      <!-- 耗时与流水线监控 -->
+      <div id="timing-banner" style="margin-top: 14px; font-size: 12px; color: var(--text-muted); display: flex; gap: 16px; flex-wrap: wrap;">
+        <span>SeekDB 向量耗时: <b id="t-vec">-</b></span>
+        <span>BM25 耗时: <b id="t-bm25">-</b></span>
+        <span>RRF 融合耗时: <b id="t-rrf">-</b></span>
+        <span>Rerank 精排耗时: <b id="t-rerank">-</b></span>
+        <span>总全链路耗时: <b id="t-total" style="color: var(--primary);">-</b></span>
+      </div>
+    </div>
+
+    <!-- 四重视角对比栅格 -->
+    <div class="comparison-grid">
+      <!-- 视角 1: 纯向量检索 -->
+      <div class="column-box col-vec">
+        <div class="column-header">
+          <div>
+            <div class="column-title">1. 纯向量检索 (Dense)</div>
+            <div style="font-size: 11px; color: var(--text-muted);">SeekDB HNSW 余弦距离</div>
+          </div>
+          <span class="item-score score-vec">Top 5</span>
+        </div>
+        <div id="col-vec-items"></div>
+      </div>
+
+      <!-- 视角 2: 纯 BM25 检索 -->
+      <div class="column-box col-bm25">
+        <div class="column-header">
+          <div>
+            <div class="column-title">2. 纯关键词检索 (Sparse)</div>
+            <div style="font-size: 11px; color: var(--text-muted);">BM25Okapi + Jieba 倒排</div>
+          </div>
+          <span class="item-score score-bm25">Top 5</span>
+        </div>
+        <div id="col-bm25-items"></div>
+      </div>
+
+      <!-- 视角 3: RRF 混合粗排 (Top 20) -->
+      <div class="column-box col-rrf">
+        <div class="column-header">
+          <div>
+            <div class="column-title">3. RRF 混合粗排 (Hybrid)</div>
+            <div style="font-size: 11px; color: var(--text-muted);">倒数排名融合候选池 (Top 20)</div>
+          </div>
+          <span class="item-score score-rrf">Top 20</span>
+        </div>
+        <div id="col-rrf-items"></div>
+      </div>
+
+      <!-- 视角 4: Rerank 精排 Top 5 -->
+      <div class="column-box col-rerank">
+        <div class="column-header">
+          <div>
+            <div class="column-title">4. Rerank 精排 (Final)</div>
+            <div style="font-size: 11px; color: var(--text-muted);">交叉注意力重排 (Top 5)</div>
+          </div>
+          <span class="item-score score-rerank" style="background: #f5f3ff; color: #8b5cf6;">最终交付</span>
+        </div>
+        <div id="col-rerank-items"></div>
+      </div>
+    </div>
+
+    <!-- 底部：Dify 外部知识库 API 实时联调输出 -->
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <div style="font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+          <span>🔌</span> Dify 外部知识库 API (POST /retrieval) 实时交互报文
+        </div>
+        <span class="badge badge-success">Dify 协议 100% 兼容</span>
+      </div>
+      <div class="dify-api-box" id="dify-api-output">
+        <div class="terminal-cmd"># 发起标准 Dify 外部知识库协议检索:</div>
+        <div class="terminal-cmd">curl -X POST http://localhost:8089/retrieval \</div>
+        <div class="terminal-cmd">  -H "Content-Type: application/json" \</div>
+        <div class="terminal-cmd">  -d '{"knowledge_id": "oceanbase_contest_kb", "query": "...", "retrieval_setting": {"top_k": 5}}'</div>
+        <div class="terminal-res">// 等待检索触发...</div>
+      </div>
+    </div>
+
+    <footer>
+      <p>OceanBase 2026 全国数据库大赛 · Dify 赛道混合检索与 Rerank 满分交付物 | 唐万桂 (WANGUI TANG) & 唐棠堂</p>
+    </footer>
+  </div>
+
+  <script>
+    const weightSlider = document.getElementById('weight-slider');
+    const lblVecW = document.getElementById('lbl-vec-w');
+    const lblBmW = document.getElementById('lbl-bm-w');
+    const queryInput = document.getElementById('search-query');
+    const filterSelect = document.getElementById('filter-source');
+
+    weightSlider.addEventListener('input', (e) => {
+      const v = parseInt(e.target.value) / 100.0;
+      const b = (100 - parseInt(e.target.value)) / 100.0;
+      lblVecW.textContent = v.toFixed(2);
+      lblBmW.textContent = b.toFixed(2);
+    });
+
+    window.setQuery = (q) => {
+      queryInput.value = q;
+      runSearch();
+    };
+
+    async function runSearch() {
+      const query = queryInput.value.trim();
+      if (!query) return;
+
+      const vecW = parseFloat(lblVecW.textContent);
+      const bmW = parseFloat(lblBmW.textContent);
+      const filterSource = filterSelect.value;
+
+      const btn = document.getElementById('btn-run-search');
+      btn.disabled = true;
+      btn.innerHTML = `<span>⏳ 正在执行混合检索与 Rerank...</span>`;
+
+      try {
+        const resp = await fetch('/api/search/compare', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: query,
+            vector_weight: vecW,
+            bm25_weight: bmW,
+            filter_source: filterSource,
+            top_k_coarse: 20,
+            top_n_rerank: 5
+          })
+        });
+
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.detail || '检索异常');
+
+        // 更新耗时
+        document.getElementById('t-vec').textContent = `${data.timing.seekdb_vector_ms} ms`;
+        document.getElementById('t-bm25').textContent = `${data.timing.bm25_ms} ms`;
+        document.getElementById('t-rrf').textContent = `${data.timing.rrf_fusion_ms} ms`;
+        document.getElementById('t-rerank').textContent = `${data.timing.rerank_ms} ms`;
+        document.getElementById('t-total').textContent = `${data.timing.total_pipeline_ms} ms`;
+
+        // 渲染 4 列
+        renderVectorColumn(data.views.vector_top);
+        renderBm25Column(data.views.bm25_top);
+        renderRrfColumn(data.views.hybrid_coarse_top20);
+        renderRerankColumn(data.views.rerank_fine_top5);
+
+        // 同步拉取一次 Dify 官方 /retrieval 接口并展示报文
+        fetchDifyRetrieval(query);
+
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<span>🚀 执行混合检索与精排流水线</span>`;
+      }
+    }
+
+    function renderVectorColumn(items) {
+      const el = document.getElementById('col-vec-items');
+      if (!items || items.length === 0) {
+        el.innerHTML = `<div style="color: var(--text-muted); padding: 12px; font-size: 12px;">无匹配结果</div>`;
+        return;
+      }
+      let html = '';
+      items.forEach((it) => {
+        html += `
+          <div class="item-card">
+            <div class="item-header">
+              <span class="item-title">#${it.vector_rank} ${escapeHtml(it.title)}</span>
+              <span class="item-score score-vec">${it.similarity_pct}%</span>
+            </div>
+            <div class="item-body">${escapeHtml(it.content)}</div>
+            <div class="item-meta">
+              <span>距离: ${it.distance}</span>
+              <span>分类: ${it.category}</span>
+            </div>
+          </div>
+        `;
+      });
+      el.innerHTML = html;
+    }
+
+    function renderBm25Column(items) {
+      const el = document.getElementById('col-bm25-items');
+      if (!items || items.length === 0) {
+        el.innerHTML = `<div style="color: var(--text-muted); padding: 12px; font-size: 12px;">无关键词匹配（词不命中文档）</div>`;
+        return;
+      }
+      let html = '';
+      items.forEach((it) => {
+        html += `
+          <div class="item-card">
+            <div class="item-header">
+              <span class="item-title">#${it.bm25_rank} ${escapeHtml(it.title)}</span>
+              <span class="item-score score-bm25">BM25: ${it.bm25_score}</span>
+            </div>
+            <div class="item-body">${escapeHtml(it.content)}</div>
+            <div class="item-meta">
+              <span>分类: ${it.category}</span>
+              <span>来源: ${it.source}</span>
+            </div>
+          </div>
+        `;
+      });
+      el.innerHTML = html;
+    }
+
+    function renderRrfColumn(items) {
+      const el = document.getElementById('col-rrf-items');
+      if (!items || items.length === 0) {
+        el.innerHTML = `<div style="color: var(--text-muted); padding: 12px; font-size: 12px;">无候选</div>`;
+        return;
+      }
+      let html = '';
+      items.slice(0, 8).forEach((it) => {
+        html += `
+          <div class="item-card">
+            <div class="item-header">
+              <span class="item-title">#${it.rrf_rank} ${escapeHtml(it.title)}</span>
+              <span class="item-score score-rrf">RRF: ${it.rrf_score.toFixed(4)}</span>
+            </div>
+            <div class="item-body">${escapeHtml(it.content)}</div>
+            <div class="item-meta">
+              <span>向量排位: ${it.vector_rank || '未入选'}</span>
+              <span>BM25排位: ${it.bm25_rank || '未入选'}</span>
+            </div>
+          </div>
+        `;
+      });
+      if (items.length > 8) {
+        html += `<div style="text-align: center; color: var(--text-muted); font-size: 11px; padding: 4px;">... 粗排池共包含 ${items.length} 条候选 (已送入精排) ...</div>`;
+      }
+      el.innerHTML = html;
+    }
+
+    function renderRerankColumn(items) {
+      const el = document.getElementById('col-rerank-items');
+      if (!items || items.length === 0) {
+        el.innerHTML = `<div style="color: var(--text-muted); padding: 12px; font-size: 12px;">无精排结果</div>`;
+        return;
+      }
+      let html = '';
+      items.forEach((it) => {
+        let deltaHtml = '';
+        if (it.rank_delta > 0) {
+          deltaHtml = `<span class="delta-badge delta-up">⬆️ 跃升 +${it.rank_delta} 名</span>`;
+        } else if (it.rank_delta === 0) {
+          deltaHtml = `<span class="delta-badge delta-same">维持第 ${it.final_rank}</span>`;
+        }
+
+        html += `
+          <div class="item-card" style="border-left: 3px solid #8b5cf6;">
+            <div class="item-header">
+              <span class="item-title">🏆 Top ${it.final_rank} ${escapeHtml(it.title)}</span>
+              <span class="item-score score-rerank">得分: ${it.rerank_score}</span>
+            </div>
+            <div class="item-body">${escapeHtml(it.content)}</div>
+            <div class="item-meta" style="align-items: center;">
+              ${deltaHtml}
+              <span>命中词: [${(it.overlap_terms || []).join(', ')}]</span>
+              <span>分类: ${it.category}</span>
+            </div>
+          </div>
+        `;
+      });
+      el.innerHTML = html;
+    }
+
+    async function fetchDifyRetrieval(query) {
+      const difyBox = document.getElementById('dify-api-output');
+      try {
+        const resp = await fetch('/retrieval', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            knowledge_id: "oceanbase_contest_kb",
+            query: query,
+            retrieval_setting: { top_k: 5, score_threshold: 0.1 }
+          })
+        });
+        const json = await resp.json();
+        difyBox.innerHTML = `
+<div class="terminal-cmd"># Dify 官方协议交互成功: POST /retrieval 响应返回 ${json.records?.length || 0} 条标准化制品:</div>
+<div class="terminal-res">${escapeHtml(JSON.stringify(json, null, 2))}</div>
+        `;
+      } catch (e) {
+        difyBox.innerHTML = `<div style="color: #ef4444;">Dify 响应异常: ${e.message}</div>`;
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    document.getElementById('btn-run-search').addEventListener('click', runSearch);
+    queryInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') runSearch();
+    });
+
+    // 默认加载一次
+    window.addEventListener('load', () => {
+      runSearch();
+    });
+  </script>
+</body>
+</html>
