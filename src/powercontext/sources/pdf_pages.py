@@ -18,11 +18,13 @@ from __future__ import annotations
 
 import hashlib
 import io
+import logging
 import math
 import re
 import unicodedata
-from collections import Counter, defaultdict
+from collections import Counter, OrderedDict, defaultdict
 from dataclasses import dataclass, field
+from functools import lru_cache
 from typing import Any
 from urllib.parse import quote, unquote
 
@@ -30,7 +32,7 @@ from pydantic import BaseModel, model_validator
 from pypdf import PdfReader
 
 from powercontext.builtin.artifacts.memory.models import MemoryCitation
-from powercontext.builtin.runtime.models import MemoryEntryRecord, SearchMemoryRequest
+from powercontext.builtin.runtime.models import MemoryEntryRecord
 from powercontext.limits import MAX_SOURCE_ID_LENGTH
 from powercontext.sources import TEXT_EVIDENCE_PROJECTION_KEY, AdapterSourceDefinition, TextEvidence
 from powercontext.sources.models import Source, SourceMaterialization
@@ -38,8 +40,39 @@ from powercontext.sources.models import Source, SourceMaterialization
 PDF_PAGE_SOURCE_NAME = "pdf-page"
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _TOKEN_RE = re.compile(r"[a-z]+|\d+")
+_ALNUM_TOKEN_RE = re.compile(r"[a-z0-9]+")
 _YEAR_RE = re.compile(r"\b(19\d\d|20\d\d)\b")
-_FY_YEAR_RE = re.compile(r"\bfy\s*['’]?\s*(\d{2}|\d{4})\b", re.IGNORECASE)
+_FY_YEAR_RE = re.compile(r"\bfy\s*['’]?\s*(\d{2}|\d{4})\b", re.IGNORECASE)  # noqa: RUF001
+
+_ITEM_LINE_RE = re.compile(r"^item\s+\d+[a-z]?[\.\s–—-]", re.IGNORECASE)  # noqa: RUF001
+_ITEM1_BUSINESS_RE = re.compile(r"\bitem\s+1\.?\s*[-–—]?\s*business\b", re.IGNORECASE)  # noqa: RUF001
+_TOC_PAGE_NUM_END_RE = re.compile(r"\s\d{1,3}$")
+_WS_RE = re.compile(r"\s+")
+_COMP_INCOME_STMT_RE = re.compile(
+    r"\b(?:consolidated\s+statements?\s+of\s+comprehensive\s+(?:income|loss|earnings)"
+    r"|statements?\s+of\s+consolidated\s+comprehensive\s+(?:income|loss|earnings))\b"
+)
+_INCOME_STMT_RE = re.compile(
+    r"\b(?:consolidated\s+statements?\s+of\s+(?:income|operations|earnings)"
+    r"|statements?\s+of\s+consolidated\s+(?:income|operations|earnings)"
+    r"|consolidated\s+(?:income|operations|earnings)\s+statements?"
+    r"|income\s+statements?)\b"
+)
+_CASH_FLOW_STMT_RE = re.compile(
+    r"\b(?:consolidated\s+statements?\s+of\s+cash\s+flows?"
+    r"|statements?\s+of\s+consolidated\s+cash\s+flows?"
+    r"|consolidated\s+cash\s+flows?\s+statements?)\b"
+)
+_BALANCE_SHEET_RE = re.compile(
+    r"\b(?:consolidated\s+balance\s+sheets?"
+    r"|balance\s+sheets?"
+    r"|consolidated\s+statements?\s+of\s+financial\s+position"
+    r"|statements?\s+of\s+consolidated\s+financial\s+position)\b"
+)
+_EQUITY_STMT_RE = re.compile(
+    r"\b(?:consolidated\s+statements?\s+of\s+(?:(?:stockholders|shareholders|shareowners|common\s+stockholders|total)['’]?\s+)?equity"  # noqa: RUF001
+    r"|statements?\s+of\s+consolidated\s+(?:(?:stockholders|shareholders|shareowners)['’]?\s+)?equity)\b"  # noqa: RUF001
+)
 
 _STOPWORDS = frozenset({
     "a",
@@ -156,6 +189,11 @@ _STOPWORDS = frozenset({
     "all",
     "reported",
     "report",
+    "based",
+    "data",
+    "like",
+    "please",
+    "explain",
 })
 
 _COMPANY_GENERIC_WORDS = frozenset({
@@ -190,6 +228,37 @@ _COMPANY_GENERIC_WORDS = frozenset({
     "q3",
     "q4",
 })
+
+
+@lru_cache(maxsize=16384)
+def _stem(token: str) -> str:  # noqa: C901
+    """Normalize English morphological variants for financial retrieval."""
+
+    if len(token) <= 3 or token.isdigit():
+        return token
+    w = token
+    if (w.endswith("icality") and len(w) > 9) or (w.endswith("ality") and len(w) > 7):
+        w = w[:-3]
+    elif w.endswith("abilities") and len(w) > 10:
+        w = w[:-9] + "able"
+    elif w.endswith("ability") and len(w) > 8:
+        w = w[:-7] + "able"
+    elif (w.endswith("ities") and len(w) > 6) or (w.endswith("ies") and len(w) > 4):
+        w = w[:-3] + "y"
+    elif w.endswith(("ches", "shes", "xes", "zes", "sses")) and len(w) > 5:
+        w = w[:-2]
+    elif w.endswith("s") and not w.endswith(("ss", "us", "is")) and len(w) > 3:
+        w = w[:-1]
+
+    if w.endswith(("ation", "ition", "ating")) and len(w) > 7:
+        w = w[:-5]
+    elif w.endswith("ated") and len(w) > 6:
+        w = w[:-4]
+    elif w.endswith(("ate", "ing")) and len(w) > 5:
+        w = w[:-3]
+    elif w.endswith("ed") and len(w) > 4:
+        w = w[:-2]
+    return w
 
 
 def _validate_document_id(document_id: str) -> str:
@@ -255,7 +324,7 @@ class PDFPageInput(BaseModel):
         _validate_document_sha256(self.document_sha256)
         _validate_page_number(self.page_number)
         if not isinstance(self.text, str):
-            raise ValueError("text must be a string")  # noqa: TRY003
+            raise ValueError("text must be a string")  # noqa: TRY003, TRY004
         pdf_page_source_id(self.document_id, self.document_sha256, self.page_number)
         return self
 
@@ -280,11 +349,28 @@ class PDFPageSource(Source):
         return self
 
 
-def parse_pdf_document(value: PDFDocumentInput) -> tuple[PDFPageInput, ...]:
+class _PyPDFCorruptionWatcher(logging.Handler):
+    """Detect stream decompression errors logged as warnings by pypdf.filters."""
+
+    def __init__(self) -> None:
+        super().__init__(level=logging.WARNING)
+        self.corrupt_messages: list[str] = []
+
+    def emit(self, record: logging.LogRecord) -> None:
+        msg = record.getMessage()
+        if "while decompressing data" in msg or (record.name == "pypdf.filters" and msg.startswith("Error ")):
+            self.corrupt_messages.append(msg)
+
+
+_PARSED_PDF_CACHE: OrderedDict[str, tuple[str, ...]] = OrderedDict()
+_MAX_PARSED_PDF_CACHE = 16
+
+
+def parse_pdf_document(value: PDFDocumentInput) -> tuple[PDFPageInput, ...]:  # noqa: C901
     """Parse all physical pages of a complete PDF document atomically."""
 
     if not isinstance(value, PDFDocumentInput):
-        raise ValueError("value must be a PDFDocumentInput")  # noqa: TRY003
+        raise ValueError("value must be a PDFDocumentInput")  # noqa: TRY003, TRY004
     _validate_document_id(value.document_id)
     if not isinstance(value.content, (bytes, bytearray)) or len(value.content) == 0:
         raise ValueError("PDF content must be non-empty bytes")  # noqa: TRY003
@@ -297,21 +383,43 @@ def parse_pdf_document(value: PDFDocumentInput) -> tuple[PDFPageInput, ...]:
 
     document_sha256 = hashlib.sha256(raw).hexdigest()
 
+    cached_texts = _PARSED_PDF_CACHE.get(document_sha256)
+    if cached_texts is not None:
+        _PARSED_PDF_CACHE.move_to_end(document_sha256)
+        return tuple(
+            PDFPageInput(
+                document_id=value.document_id,
+                document_sha256=document_sha256,
+                page_number=idx,
+                text=page_text,
+            )
+            for idx, page_text in enumerate(cached_texts, start=1)
+        )
+
+    watcher = _PyPDFCorruptionWatcher()
+    pypdf_logger = logging.getLogger("pypdf")
+    pypdf_logger.addHandler(watcher)
     try:
-        reader = PdfReader(io.BytesIO(raw), strict=False)
+        reader = PdfReader(io.BytesIO(raw), strict=True)
         if reader.is_encrypted:
             decrypt_status = reader.decrypt("")
             if not decrypt_status:
-                raise ValueError("Encrypted PDF requires a non-empty password")  # noqa: TRY003
+                raise ValueError("Encrypted PDF requires a non-empty password")  # noqa: TRY003, TRY301
         total_pages = len(reader.pages)
         if total_pages < 1:
-            raise ValueError("PDF document must contain at least one page")  # noqa: TRY003
+            raise ValueError("PDF document must contain at least one page")  # noqa: TRY003, TRY301
 
+        page_texts: list[str] = []
         pages: list[PDFPageInput] = []
         for page_number, page in enumerate(reader.pages, start=1):
             extracted = page.extract_text() or ""
+            if not extracted and "/Contents" in page:
+                page.get_contents()
+            if watcher.corrupt_messages:
+                raise ValueError(f"Corrupt PDF stream on page {page_number}: {watcher.corrupt_messages[0]}")  # noqa: TRY003, TRY301
             normalized = unicodedata.normalize("NFC", extracted)
             text = normalized.strip() if normalized.strip() else ""
+            page_texts.append(text)
             pages.append(
                 PDFPageInput(
                     document_id=value.document_id,
@@ -324,6 +432,12 @@ def parse_pdf_document(value: PDFDocumentInput) -> tuple[PDFPageInput, ...]:
         raise
     except Exception as exc:
         raise ValueError(f"Failed to parse PDF document: {exc}") from exc  # noqa: TRY003
+    finally:
+        pypdf_logger.removeHandler(watcher)
+
+    _PARSED_PDF_CACHE[document_sha256] = tuple(page_texts)
+    while len(_PARSED_PDF_CACHE) > _MAX_PARSED_PDF_CACHE:
+        _PARSED_PDF_CACHE.popitem(last=False)
 
     return tuple(pages)
 
@@ -387,8 +501,8 @@ PDF_PAGE_SOURCE_DEFINITION = AdapterSourceDefinition(
 
 @dataclass
 class _IndexedPage:
-    record: MemoryEntryRecord
-    citation: MemoryCitation
+    entry_id: str
+    entry_version_id: str
     document_id: str
     page_number: int
     page_text: str
@@ -396,22 +510,35 @@ class _IndexedPage:
     header_lower: str
     tokens: list[str]
     token_counts: Counter[str]
+    stem_counts: Counter[str]
     header_tokens: list[str]
     header_token_counts: Counter[str]
+    header_stem_counts: Counter[str]
     bigrams: set[tuple[str, str]]
     header_bigrams: set[tuple[str, str]]
     is_toc: bool = False
     is_exhibit: bool = False
+    is_item1_business: bool = False
     is_income_stmt: bool = False
     is_comp_income_stmt: bool = False
     is_cash_flow_stmt: bool = False
     is_balance_sheet: bool = False
     is_equity_stmt: bool = False
-    fts_rank: int | None = None
-    doc_score: float = 0.0
-    base_score: float = 0.0
-    final_score: float = 0.0
-    extra_tags: set[str] = field(default_factory=set)
+
+
+@dataclass
+class _CorpusIndex:
+    all_pages: list[_IndexedPage]
+    by_doc: dict[str, list[_IndexedPage]]
+    n_docs: int
+    avg_len: float
+    avg_header_len: float
+    df_exact: Counter[str]
+    df_stem: Counter[str]
+
+
+_CORPUS_INDEX_CACHE: OrderedDict[tuple[Any, ...], _CorpusIndex] = OrderedDict()
+_MAX_CORPUS_INDEX_CACHE = 8
 
 
 def _parse_page_identity(record: MemoryEntryRecord) -> tuple[str, int, str] | None:
@@ -440,12 +567,16 @@ def _parse_page_identity(record: MemoryEntryRecord) -> tuple[str, int, str] | No
                     doc_id = doc_from_text if doc_from_text else decoded_doc
                     return doc_id, page_num, page_text
 
-    if doc_from_text:
-        return doc_from_text, 0, page_text
     return None
 
 
-def _classify_document_pages(pages: list[_IndexedPage]) -> None:
+def _is_toc_numbered_line(line: str) -> bool:
+    if _TOC_PAGE_NUM_END_RE.search(line) is None:
+        return False
+    return any(ch.isalpha() for ch in line)
+
+
+def _classify_document_pages(pages: list[_IndexedPage]) -> None:  # noqa: C901
     pages.sort(key=lambda p: p.page_number)
     signatures_page: int | None = None
     for p in pages:
@@ -468,23 +599,24 @@ def _classify_document_pages(pages: list[_IndexedPage]) -> None:
         head_lines = lines[:10]
         head_joined = " | ".join(head_lines).lower()
 
-        item_line_count = sum(1 for line in lines if re.match(r"^item\s+\d+[a-z]?[\.\s–—-]", line.lower()))
-        page_num_end_count = sum(1 for line in lines if re.search(r"[A-Za-z].*\s+\d{1,3}$", line))
+        item_line_count = sum(1 for line in lines if _ITEM_LINE_RE.match(line) is not None)
+        page_num_end_count = sum(1 for line in lines if _is_toc_numbered_line(line))
         if item_line_count >= 5 or (page_num_end_count >= 12 and len(lines) >= 15):
             p.is_toc = True
 
         if p.is_toc or p.is_exhibit:
             continue
 
+        if _ITEM1_BUSINESS_RE.search(head_joined):
+            p.is_item1_business = True
+
         num_count = sum(1 for tok in p.tokens if tok.isdigit())
         has_scale_marker = any(
             marker in p.text_lower
             for marker in (
-                "in millions",
-                "in thousands",
-                "in billions",
-                "dollars in millions",
-                "dollars in thousands",
+                "millions",
+                "thousands",
+                "billions",
                 "per share",
                 "operating activities",
                 "investing activities",
@@ -496,33 +628,18 @@ def _classify_document_pages(pages: list[_IndexedPage]) -> None:
         if num_count < 8 or not has_scale_marker:
             continue
 
-        if re.search(
-            r"\b(?:consolidated\s+statements?\s+of\s+comprehensive\s+(?:income|loss|earnings)|statements?\s+of\s+consolidated\s+comprehensive\s+(?:income|loss|earnings))\b",
-            head_joined,
-        ):
+        if _COMP_INCOME_STMT_RE.search(head_joined):
             p.is_comp_income_stmt = True
-        elif re.search(
-            r"\b(?:consolidated\s+statements?\s+of\s+(?:income|operations|earnings)|statements?\s+of\s+consolidated\s+(?:income|operations|earnings)|consolidated\s+(?:income|operations|earnings)\s+statements?|income\s+statements?)\b",
-            head_joined,
-        ):
+        elif _INCOME_STMT_RE.search(head_joined):
             p.is_income_stmt = True
 
-        if re.search(
-            r"\b(?:consolidated\s+statements?\s+of\s+cash\s+flows?|statements?\s+of\s+consolidated\s+cash\s+flows?|consolidated\s+cash\s+flows?\s+statements?)\b",
-            head_joined,
-        ):
+        if _CASH_FLOW_STMT_RE.search(head_joined):
             p.is_cash_flow_stmt = True
 
-        if re.search(
-            r"\b(?:consolidated\s+balance\s+sheets?|balance\s+sheets?|consolidated\s+statements?\s+of\s+financial\s+position|statements?\s+of\s+consolidated\s+financial\s+position)\b",
-            head_joined,
-        ):
+        if _BALANCE_SHEET_RE.search(head_joined):
             p.is_balance_sheet = True
 
-        if re.search(
-            r"\b(?:consolidated\s+statements?\s+of\s+(?:(?:stockholders|shareholders|shareowners|common\s+stockholders|total)['’]?\s+)?equity|statements?\s+of\s+consolidated\s+(?:(?:stockholders|shareholders|shareowners)['’]?\s+)?equity)\b",
-            head_joined,
-        ):
+        if _EQUITY_STMT_RE.search(head_joined):
             p.is_equity_stmt = True
 
         if idx > 0:
@@ -553,6 +670,85 @@ def _classify_document_pages(pages: list[_IndexedPage]) -> None:
                 p.is_balance_sheet = True
 
 
+def _build_corpus_index(records: tuple[MemoryEntryRecord, ...]) -> _CorpusIndex:
+    by_doc: dict[str, list[_IndexedPage]] = defaultdict(list)
+    all_pages: list[_IndexedPage] = []
+    df_exact: Counter[str] = Counter()
+    df_stem: Counter[str] = Counter()
+
+    for record in records:
+        parsed = _parse_page_identity(record)
+        if parsed is None:
+            continue
+        doc_id, page_num, page_text = parsed
+        text_lower = _WS_RE.sub(" ", page_text.lower())
+        lines = [
+            line.strip()
+            for line in page_text.splitlines()
+            if line.strip() and line.strip().lower() != "table of contents"
+        ]
+        header_lower = _WS_RE.sub(" ", "\n".join(lines[:10]).lower())
+        tokens = _TOKEN_RE.findall(text_lower)
+        token_counts = Counter(tokens)
+        stem_counts: Counter[str] = Counter()
+        for tok, cnt in token_counts.items():
+            stem_counts[_stem(tok)] += cnt
+
+        header_tokens = _TOKEN_RE.findall(header_lower)
+        header_token_counts = Counter(header_tokens)
+        header_stem_counts: Counter[str] = Counter()
+        for tok, cnt in header_token_counts.items():
+            header_stem_counts[_stem(tok)] += cnt
+
+        for tok in token_counts:
+            df_exact[tok] += 1
+        for st in stem_counts:
+            df_stem[st] += 1
+
+        bigrams = {(tokens[i], tokens[i + 1]) for i in range(len(tokens) - 1)} if len(tokens) >= 2 else set()
+        header_bigrams = (
+            {(header_tokens[i], header_tokens[i + 1]) for i in range(len(header_tokens) - 1)}
+            if len(header_tokens) >= 2
+            else set()
+        )
+        indexed = _IndexedPage(
+            entry_id=record.entry.entry_id,
+            entry_version_id=record.entry.entry_version_id,
+            document_id=doc_id,
+            page_number=page_num,
+            page_text=page_text,
+            text_lower=text_lower,
+            header_lower=header_lower,
+            tokens=tokens,
+            token_counts=token_counts,
+            stem_counts=stem_counts,
+            header_tokens=header_tokens,
+            header_token_counts=header_token_counts,
+            header_stem_counts=header_stem_counts,
+            bigrams=bigrams,
+            header_bigrams=header_bigrams,
+        )
+        by_doc[doc_id].append(indexed)
+        all_pages.append(indexed)
+
+    for doc_pages in by_doc.values():
+        _classify_document_pages(doc_pages)
+
+    n_docs = len(all_pages)
+    avg_len = max(1.0, sum(len(p.tokens) for p in all_pages) / max(1, n_docs))
+    avg_header_len = max(1.0, sum(len(p.header_tokens) for p in all_pages) / max(1, n_docs))
+
+    return _CorpusIndex(
+        all_pages=all_pages,
+        by_doc=by_doc,
+        n_docs=n_docs,
+        avg_len=avg_len,
+        avg_header_len=avg_header_len,
+        df_exact=df_exact,
+        df_stem=df_stem,
+    )
+
+
 def _extract_question_years(question: str) -> set[str]:
     years: set[str] = set()
     for match in _YEAR_RE.findall(question):
@@ -565,16 +761,17 @@ def _extract_question_years(question: str) -> set[str]:
     return years
 
 
-def _compute_document_scores(
+def _compute_document_scores(  # noqa: C901
     by_doc: dict[str, list[_IndexedPage]],
     question: str,
 ) -> dict[str, float]:
     if len(by_doc) <= 1:
-        return {doc_id: 0.0 for doc_id in by_doc}
+        return dict.fromkeys(by_doc, 0.0)
 
     q_lower = question.lower()
     q_alnum = re.sub(r"[^a-z0-9]+", "", q_lower)
     q_tokens = set(_TOKEN_RE.findall(q_lower))
+    q_alnum_tokens = set(_ALNUM_TOKEN_RE.findall(q_lower))
     q_years = _extract_question_years(question)
 
     scores: dict[str, float] = {}
@@ -586,7 +783,7 @@ def _compute_document_scores(
 
         company_parts: list[str] = []
         for part in raw_parts:
-            if part in doc_years or part in {"10k", "10q", "8k", "q1", "q2", "q3", "q4", "fy"}:
+            if part in doc_years or part in {"10k", "10q", "8k", "q1", "q2", "q3", "q4", "fy", "earnings"}:
                 break
             if part not in _COMPANY_GENERIC_WORDS:
                 company_parts.append(part)
@@ -594,40 +791,37 @@ def _compute_document_scores(
         company_concat = "".join(company_parts)
         company_matched = False
         if company_concat:
-            if len(company_concat) >= 4 and company_concat in q_alnum:
+            if (len(company_concat) >= 4 and company_concat in q_alnum) or (
+                len(company_concat) <= 3 and (company_concat in q_alnum_tokens or company_concat in q_tokens)
+            ):
                 score += 2000.0
                 company_matched = True
-            elif len(company_concat) <= 3 and company_concat in q_tokens:
-                score += 2000.0
-                company_matched = True
-            elif any(len(part) >= 4 and part in q_tokens for part in company_parts):
+            elif any(len(part) >= 4 and (part in q_alnum_tokens or part in q_tokens) for part in company_parts):
                 score += 1600.0
+                company_matched = True
+            elif any(len(part) >= 2 and part in q_alnum_tokens for part in company_parts):
+                score += 1800.0
                 company_matched = True
 
         if not company_matched and doc_pages:
             cover_text = " ".join(p.text_lower for p in doc_pages[:3])
-            cover_tokens = set(_TOKEN_RE.findall(cover_text))
-            distinctive_q_words = [
-                tok for tok in q_tokens if tok not in _STOPWORDS and tok not in _COMPANY_GENERIC_WORDS and len(tok) >= 4
-            ]
-            if "johnson" in q_tokens and "johnson" in cover_tokens and company_concat == "jnj":
-                score += 2000.0
-                company_matched = True
-            elif (
-                ("procter" in q_tokens or "gamble" in q_tokens)
-                and "procter" in cover_tokens
-                and company_concat == "pg"
+            cover_tokens = set(_ALNUM_TOKEN_RE.findall(cover_text)) | set(_TOKEN_RE.findall(cover_text))
+            if (
+                (
+                    ("jnj" in q_alnum_tokens or "johnson" in q_tokens)
+                    and "johnson" in cover_tokens
+                    and company_concat in {"jnj", "johnsonjohnson"}
+                )
+                or (
+                    ("pg" in q_alnum_tokens or "procter" in q_tokens or "gamble" in q_tokens)
+                    and "procter" in cover_tokens
+                    and company_concat in {"pg", "proctergamble"}
+                )
+                or ("amex" in q_alnum_tokens and "american" in cover_tokens and "express" in cover_tokens)
+                or (("3m" in q_alnum_tokens or "mmm" in q_alnum_tokens) and "3m" in cover_tokens)
             ):
                 score += 2000.0
                 company_matched = True
-            elif "amex" in q_tokens and "american" in cover_tokens and "express" in cover_tokens:
-                score += 2000.0
-                company_matched = True
-            elif distinctive_q_words:
-                cover_head = " ".join(p.header_lower for p in doc_pages[:2])
-                for word in distinctive_q_words:
-                    if word in company_parts or (word in cover_head and word not in {"consolidated", "financial", "statements", "annual", "report"}):
-                        score += 500.0
 
         if q_years and doc_years:
             if q_years & doc_years:
@@ -662,6 +856,9 @@ class _QueryIntent:
     wants_balance_sheet: bool = False
     wants_equity_stmt: bool = False
     wants_geography_segments: bool = False
+    wants_customers: bool = False
+    wants_mda_drivers: bool = False
+    wants_cyclicality: bool = False
     wants_legal: bool = False
     wants_restructuring: bool = False
     wants_properties: bool = False
@@ -675,7 +872,7 @@ class _QueryIntent:
     expanded_phrases: list[tuple[str, float]] = field(default_factory=list)
 
 
-def _analyze_query_intent(question: str) -> _QueryIntent:
+def _analyze_query_intent(question: str) -> _QueryIntent:  # noqa: C901
     q_lower = question.lower()
     intent = _QueryIntent()
 
@@ -740,6 +937,62 @@ def _analyze_query_intent(question: str) -> _QueryIntent:
     if any(
         k in q_lower
         for k in (
+            "capital-intensive",
+            "capital intensive",
+            "capital intensity",
+        )
+    ):
+        intent.wants_income_stmt = True
+        intent.wants_balance_sheet = True
+        intent.wants_cash_flow = True
+        intent.expanded_phrases.extend([
+            ("consolidated statement of income", 10.0),
+            ("consolidated statements of income", 10.0),
+            ("consolidated balance sheet", 10.0),
+            ("consolidated balance sheets", 10.0),
+            ("consolidated statement of cash flows", 10.0),
+            ("consolidated statements of cash flows", 10.0),
+            ("property, plant and equipment", 6.0),
+            ("purchases of property, plant and equipment", 6.0),
+        ])
+
+    if any(
+        k in q_lower
+        for k in (
+            "what drove",
+            "drove ",
+            "driven by",
+            "dragged down",
+            "exclude the impact",
+            "excluding the impact",
+            "why did",
+            "key drivers",
+        )
+    ):
+        intent.wants_mda_drivers = True
+        intent.expanded_phrases.extend([
+            ("results of operations", 12.0),
+            ("analysis of consolidated", 14.0),
+            ("operating income margin", 14.0),
+            ("operating margin", 10.0),
+            ("percent of sales", 14.0),
+            ("percent to sales", 16.0),
+            ("as a percent to total sales", 16.0),
+            ("measured as a percent of sales", 16.0),
+            ("cost of products sold", 14.0),
+            ("sales change", 10.0),
+            ("organic sales", 10.0),
+            ("compared to the same period", 10.0),
+            ("increased special item", 10.0),
+            ("selling, general and administrative", 8.0),
+            ("sg&a", 8.0),
+        ])
+        for term in ("margin", "increased", "decreased", "compared", "impacted", "segment", "sales"):
+            intent.expanded_terms[term] = max(intent.expanded_terms.get(term, 0.0), 1.8)
+
+    if any(
+        k in q_lower
+        for k in (
             "ebitda",
             "ebit",
             "operating income",
@@ -765,6 +1018,8 @@ def _analyze_query_intent(question: str) -> _QueryIntent:
             "interest expense",
             "operating loss",
             "nopat",
+            "inventory turnover",
+            "high growth",
         )
     ):
         intent.wants_income_stmt = True
@@ -829,12 +1084,15 @@ def _analyze_query_intent(question: str) -> _QueryIntent:
             "inventories",
             "property, plant and equipment",
             "pp&e",
+            "ppne",
             "net pp&e",
             "fixed assets",
             "goodwill",
             "intangible assets",
             "total liabilities",
             "current liabilities",
+            "largest liability",
+            "largest asset",
             "accounts payable",
             "short-term debt",
             "long-term debt",
@@ -860,7 +1118,6 @@ def _analyze_query_intent(question: str) -> _QueryIntent:
             "dpo",
             "cash conversion cycle",
             "book value",
-            "capital intensity",
         )
     ):
         intent.wants_balance_sheet = True
@@ -886,13 +1143,22 @@ def _analyze_query_intent(question: str) -> _QueryIntent:
             "operates in",
             "operate in",
             "reportable segments",
+            "reporting segment",
             "segments",
             "divisions",
             "business segments",
+            "product categories",
+            "service categories",
+            "major products",
+            "products and services",
+            "what industry",
+            "industry does",
         )
     ):
         intent.wants_geography_segments = True
         intent.expanded_phrases.extend([
+            ("summary of business segment data", 18.0),
+            ("business segment data", 14.0),
             ("reportable segments", 12.0),
             ("our divisions", 12.0),
             ("our operations", 10.0),
@@ -906,8 +1172,81 @@ def _analyze_query_intent(question: str) -> _QueryIntent:
             ("united states", 5.0),
             ("international", 4.0),
         ])
-        for term in ("segments", "reportable", "divisions", "countries", "territories", "geographic", "europe", "asia", "africa", "america"):
+        for term in (
+            "segments",
+            "segment",
+            "reportable",
+            "divisions",
+            "countries",
+            "territories",
+            "geographic",
+            "europe",
+            "asia",
+            "africa",
+            "america",
+        ):
             intent.expanded_terms[term] = max(intent.expanded_terms.get(term, 0.0), 2.0)
+
+    if any(
+        k in q_lower
+        for k in (
+            "customer concentration",
+            "primary customers",
+            "major customers",
+            "significant customers",
+            "largest customer",
+            "largest customers",
+            "customers of",
+            "customer accounted",
+        )
+    ):
+        intent.wants_customers = True
+        intent.expanded_phrases.extend([
+            ("customer accounted for", 20.0),
+            ("customers accounted for", 20.0),
+            ("one customer accounted for", 22.0),
+            ("loss of this customer", 16.0),
+            ("derive a significant portion of our revenues", 20.0),
+            ("derive a substantial portion of our revenue", 20.0),
+            ("significant portion of our revenues from", 16.0),
+            ("substantial portion of our revenue from", 16.0),
+            ("limited number of commercial airlines", 18.0),
+            ("u.s. government contracts", 16.0),
+            ("earned pursuant to u.s. government", 18.0),
+            ("10% or more of", 14.0),
+            ("concentration of credit risk", 12.0),
+        ])
+        for term in (
+            "customer",
+            "customers",
+            "accounted",
+            "revenues",
+            "commercial",
+            "airlines",
+            "government",
+            "contracts",
+        ):
+            intent.expanded_terms[term] = max(intent.expanded_terms.get(term, 0.0), 2.5)
+
+    if any(
+        k in q_lower
+        for k in (
+            "cyclicality",
+            "cyclical",
+            "seasonality",
+            "seasonal",
+        )
+    ):
+        intent.wants_cyclicality = True
+        intent.expanded_phrases.extend([
+            ("has been cyclical", 18.0),
+            ("cyclical and", 16.0),
+            ("profit swings", 14.0),
+            ("airline industry", 10.0),
+            ("seasonality", 12.0),
+        ])
+        for term in ("cyclical", "cyclicality", "seasonal", "seasonality", "swings", "competitive"):
+            intent.expanded_terms[term] = max(intent.expanded_terms.get(term, 0.0), 3.0)
 
     if any(
         k in q_lower
@@ -933,7 +1272,16 @@ def _analyze_query_intent(question: str) -> _QueryIntent:
             ("regulatory proceedings", 10.0),
             ("material adverse effect", 8.0),
         ])
-        for term in ("legal", "proceedings", "litigation", "claims", "contingencies", "regulatory", "inquiries", "investigations"):
+        for term in (
+            "legal",
+            "proceedings",
+            "litigation",
+            "claims",
+            "contingencies",
+            "regulatory",
+            "inquiries",
+            "investigations",
+        ):
             intent.expanded_terms[term] = max(intent.expanded_terms.get(term, 0.0), 2.5)
 
     if any(
@@ -995,6 +1343,21 @@ def _analyze_query_intent(question: str) -> _QueryIntent:
     if any(
         k in q_lower
         for k in (
+            "registered to trade",
+            "national securities exchange",
+            "trading symbol",
+            "section 12(b)",
+        )
+    ):
+        intent.expanded_phrases.extend([
+            ("securities registered pursuant to section 12", 35.0),
+            ("name of each exchange on which registered", 35.0),
+            ("trading symbol", 25.0),
+        ])
+
+    if any(
+        k in q_lower
+        for k in (
             "acquisition",
             "acquisitions",
             "divestiture",
@@ -1033,7 +1396,10 @@ def _analyze_query_intent(question: str) -> _QueryIntent:
             ("lease liabilities", 10.0),
         ])
 
-    if any(k in q_lower for k in ("share-based compensation", "stock-based compensation", "stock options", "restricted stock")):
+    if any(
+        k in q_lower
+        for k in ("share-based compensation", "stock-based compensation", "stock options", "restricted stock")
+    ):
         intent.wants_share_comp = True
         intent.expanded_phrases.extend([
             ("share-based compensation", 12.0),
@@ -1043,7 +1409,32 @@ def _analyze_query_intent(question: str) -> _QueryIntent:
     return intent
 
 
-async def search_pdf_pages(
+def _get_or_build_corpus_index(
+    memory_ref: Any,
+    records: tuple[MemoryEntryRecord, ...],
+) -> _CorpusIndex:
+    first_id = records[0].entry.entry_id if records else ""
+    last_id = records[-1].entry.entry_id if records else ""
+    cache_key = (
+        getattr(memory_ref, "artifact_id", str(memory_ref)),
+        getattr(memory_ref, "revision", 0),
+        len(records),
+        first_id,
+        last_id,
+    )
+    cached = _CORPUS_INDEX_CACHE.get(cache_key)
+    if cached is not None:
+        _CORPUS_INDEX_CACHE.move_to_end(cache_key)
+        return cached
+
+    built = _build_corpus_index(records)
+    _CORPUS_INDEX_CACHE[cache_key] = built
+    while len(_CORPUS_INDEX_CACHE) > _MAX_CORPUS_INDEX_CACHE:
+        _CORPUS_INDEX_CACHE.popitem(last=False)
+    return built
+
+
+async def search_pdf_pages(  # noqa: C901
     memory: Any,
     question: str,
     limit: int = 10,
@@ -1059,77 +1450,26 @@ async def search_pdf_pages(
     if not entries_page.entries:
         return ()
 
-    fts_ranks: dict[tuple[str, str], int] = {}
-    q_tokens_raw = _TOKEN_RE.findall(question.lower())
-    core_q_tokens = [tok for tok in q_tokens_raw if tok not in _STOPWORDS and len(tok) >= 2]
-    fts_query = " ".join(core_q_tokens[:12]) if core_q_tokens else question.strip()
-    try:
-        search_page = await memory.search(
-            SearchMemoryRequest(
-                query=fts_query,
-                mode="fts",
-                limit=min(max(limit * 2, 20), 50),
-            )
-        )
-        for rank, hit in enumerate(search_page.hits, start=1):
-            fts_ranks[(hit.entry_id, hit.entry_version_id)] = rank
-    except Exception:
-        pass
+    records = tuple(entries_page.entries)
+    citation_by_entry: dict[tuple[str, str], MemoryCitation] = {
+        (r.entry.entry_id, r.entry.entry_version_id): r.citation for r in records
+    }
 
-    by_doc: dict[str, list[_IndexedPage]] = defaultdict(list)
-    all_pages: list[_IndexedPage] = []
-
-    for record in entries_page.entries:
-        parsed = _parse_page_identity(record)
-        if parsed is None:
-            continue
-        doc_id, page_num, page_text = parsed
-        text_lower = page_text.lower()
-        lines = [
-            line.strip()
-            for line in page_text.splitlines()
-            if line.strip() and line.strip().lower() != "table of contents"
-        ]
-        header_lower = "\n".join(lines[:10]).lower()
-        tokens = _TOKEN_RE.findall(text_lower)
-        header_tokens = _TOKEN_RE.findall(header_lower)
-        bigrams = {(tokens[i], tokens[i + 1]) for i in range(len(tokens) - 1)} if len(tokens) >= 2 else set()
-        header_bigrams = (
-            {(header_tokens[i], header_tokens[i + 1]) for i in range(len(header_tokens) - 1)}
-            if len(header_tokens) >= 2
-            else set()
-        )
-        indexed = _IndexedPage(
-            record=record,
-            citation=record.citation,
-            document_id=doc_id,
-            page_number=page_num,
-            page_text=page_text,
-            text_lower=text_lower,
-            header_lower=header_lower,
-            tokens=tokens,
-            token_counts=Counter(tokens),
-            header_tokens=header_tokens,
-            header_token_counts=Counter(header_tokens),
-            bigrams=bigrams,
-            header_bigrams=header_bigrams,
-            fts_rank=fts_ranks.get((record.entry.entry_id, record.entry.entry_version_id)),
-        )
-        by_doc[doc_id].append(indexed)
-        all_pages.append(indexed)
-
+    corpus = _get_or_build_corpus_index(entries_page.memory_ref, records)
+    all_pages = corpus.all_pages
     if not all_pages:
         return ()
 
-    for doc_pages in by_doc.values():
-        _classify_document_pages(doc_pages)
-
+    by_doc = corpus.by_doc
     doc_scores = _compute_document_scores(by_doc, question)
     intent = _analyze_query_intent(question)
 
-    n_docs = len(all_pages)
-    avg_len = max(1.0, sum(len(p.tokens) for p in all_pages) / n_docs)
-    avg_header_len = max(1.0, sum(len(p.header_tokens) for p in all_pages) / n_docs)
+    q_tokens_raw = _TOKEN_RE.findall(question.lower())
+    core_q_tokens = [tok for tok in q_tokens_raw if tok not in _STOPWORDS and len(tok) >= 2]
+
+    n_docs = corpus.n_docs
+    avg_len = corpus.avg_len
+    avg_header_len = corpus.avg_header_len
 
     query_term_weights: dict[str, float] = {}
     for tok in core_q_tokens:
@@ -1138,21 +1478,21 @@ async def search_pdf_pages(
         if tok not in query_term_weights:
             query_term_weights[tok] = weight
 
-    doc_freq: dict[str, int] = {}
-    for term in query_term_weights:
-        doc_freq[term] = sum(1 for p in all_pages if term in p.token_counts)
+    query_stem_weights: dict[str, float] = {}
+    for tok, weight in query_term_weights.items():
+        st = _stem(tok)
+        query_stem_weights[st] = max(query_stem_weights.get(st, 0.0), weight)
 
-    query_bigrams = [
-        (core_q_tokens[i], core_q_tokens[i + 1]) for i in range(len(core_q_tokens) - 1)
-    ]
+    query_bigrams = [(core_q_tokens[i], core_q_tokens[i + 1]) for i in range(len(core_q_tokens) - 1)]
 
     k1 = 1.5
     b = 0.75
+    base_scores: dict[tuple[str, int], float] = {}
 
     for p in all_pages:
-        p.doc_score = doc_scores.get(p.document_id, 0.0)
+        loc = (p.document_id, p.page_number)
         if not p.tokens:
-            p.base_score = -50.0
+            base_scores[loc] = -50.0
             continue
 
         bm25_body = 0.0
@@ -1161,7 +1501,7 @@ async def search_pdf_pages(
         header_len = max(1, len(p.header_tokens))
 
         for term, q_weight in query_term_weights.items():
-            df = doc_freq.get(term, 0)
+            df = corpus.df_exact.get(term, 0)
             if df == 0:
                 continue
             idf = math.log(1.0 + (n_docs - df + 0.5) / (df + 0.5))
@@ -1174,7 +1514,23 @@ async def search_pdf_pages(
                 h_denom = htf + k1 * (1.0 - b + b * (header_len / avg_header_len))
                 bm25_header += q_weight * idf * ((htf * (k1 + 1.0)) / h_denom)
 
-        score = bm25_body + 2.2 * bm25_header
+        stem_body = 0.0
+        stem_header = 0.0
+        for st, q_weight in query_stem_weights.items():
+            df = corpus.df_stem.get(st, 0)
+            if df == 0:
+                continue
+            idf = math.log(1.0 + (n_docs - df + 0.5) / (df + 0.5))
+            tf = p.stem_counts.get(st, 0)
+            if tf > 0:
+                denom = tf + k1 * (1.0 - b + b * (doc_len / avg_len))
+                stem_body += q_weight * idf * ((tf * (k1 + 1.0)) / denom)
+            htf = p.header_stem_counts.get(st, 0)
+            if htf > 0:
+                h_denom = htf + k1 * (1.0 - b + b * (header_len / avg_header_len))
+                stem_header += q_weight * idf * ((htf * (k1 + 1.0)) / h_denom)
+
+        score = (0.75 * bm25_body + 0.45 * stem_body) + 2.2 * (0.75 * bm25_header + 0.45 * stem_header)
 
         for bg in query_bigrams:
             if bg in p.bigrams:
@@ -1188,31 +1544,37 @@ async def search_pdf_pages(
             elif phrase in p.text_lower:
                 score += weight
 
-        if p.fts_rank is not None:
-            score += 15.0 / (10.0 + p.fts_rank)
+        suppress_raw_stmt_boost = (
+            intent.wants_mda_drivers or intent.wants_geography_segments or intent.wants_customers
+        ) and not (
+            intent.explicit_income_stmt
+            or intent.explicit_cash_flow
+            or intent.explicit_balance_sheet
+            or intent.explicit_equity_stmt
+        )
 
         if p.is_income_stmt:
             if intent.explicit_income_stmt:
                 score += 140.0
             elif intent.wants_income_stmt:
-                score += 75.0
-            elif intent.wants_cash_flow or intent.wants_balance_sheet:
+                score += 25.0 if suppress_raw_stmt_boost else 75.0
+            elif (intent.wants_cash_flow or intent.wants_balance_sheet) and not suppress_raw_stmt_boost:
                 score += 25.0
 
         if p.is_cash_flow_stmt:
             if intent.explicit_cash_flow:
                 score += 140.0
             elif intent.wants_cash_flow:
-                score += 75.0
-            elif intent.wants_income_stmt or intent.wants_balance_sheet:
+                score += 25.0 if suppress_raw_stmt_boost else 75.0
+            elif (intent.wants_income_stmt or intent.wants_balance_sheet) and not suppress_raw_stmt_boost:
                 score += 25.0
 
         if p.is_balance_sheet:
             if intent.explicit_balance_sheet:
                 score += 140.0
             elif intent.wants_balance_sheet:
-                score += 75.0
-            elif intent.wants_income_stmt or intent.wants_cash_flow:
+                score += 25.0 if suppress_raw_stmt_boost else 75.0
+            elif (intent.wants_income_stmt or intent.wants_cash_flow) and not suppress_raw_stmt_boost:
                 score += 25.0
 
         if p.is_equity_stmt:
@@ -1221,16 +1583,37 @@ async def search_pdf_pages(
             elif intent.wants_equity_stmt:
                 score += 75.0
 
-        if p.is_comp_income_stmt and intent.wants_income_stmt:
+        if p.is_comp_income_stmt and intent.wants_income_stmt and not suppress_raw_stmt_boost:
             score += 20.0
 
         if intent.wants_geography_segments:
-            if "reportable segments" in p.text_lower or "our divisions" in p.header_lower or "our operations" in p.header_lower:
-                score += 45.0
-            if "net revenue" in p.text_lower and "long-lived assets" in p.text_lower and "united states" in p.text_lower:
+            if (
+                p.is_item1_business
+                or "reportable segments" in p.text_lower
+                or "our divisions" in p.header_lower
+                or "our operations" in p.header_lower
+                or "summary of business segment data" in p.text_lower
+            ):
+                score += 65.0
+            if (
+                "net revenue" in p.text_lower
+                and "long-lived assets" in p.text_lower
+                and "united states" in p.text_lower
+            ):
                 score += 55.0
             if "countries and territories" in p.text_lower:
                 score += 30.0
+
+        if intent.wants_customers:
+            if "customer accounted for" in p.text_lower or "customers accounted for" in p.text_lower:
+                score += 65.0
+            if (
+                "derive a significant portion of our revenues" in p.text_lower
+                or "derive a substantial portion of our revenue" in p.text_lower
+            ):
+                score += 65.0
+            if "earned pursuant to u.s. government" in p.text_lower:
+                score += 55.0
 
         if intent.wants_legal:
             if "item 3." in p.header_lower or "legal proceedings" in p.header_lower:
@@ -1238,34 +1621,42 @@ async def search_pdf_pages(
             elif "legal proceedings" in p.text_lower:
                 score += 45.0
 
-        if intent.wants_restructuring:
-            if "restructuring and impairment" in p.header_lower or "note 3" in p.header_lower:
-                score += 55.0
+        if intent.wants_restructuring and (
+            "restructuring and impairment" in p.header_lower or "note 3" in p.header_lower
+        ):
+            score += 55.0
 
-        if intent.wants_properties:
-            if "item 2." in p.header_lower and "properties" in p.header_lower:
-                score += 90.0
+        if intent.wants_properties and "item 2." in p.header_lower and "properties" in p.header_lower:
+            score += 90.0
 
         if p.is_toc:
             score -= 15.0
         if p.is_exhibit:
             score -= 45.0
 
-        p.base_score = score
+        base_scores[loc] = score
 
-    for doc_pages in by_doc.values():
+    final_scores: dict[tuple[str, int], float] = {}
+    for doc_id, doc_pages in by_doc.items():
+        d_score = doc_scores.get(doc_id, 0.0)
         n_p = len(doc_pages)
         for i, p in enumerate(doc_pages):
+            loc = (p.document_id, p.page_number)
+            b_score = base_scores[loc]
             neighbor_bonus = 0.0
-            if i > 0 and not p.is_toc and not p.is_exhibit and doc_pages[i - 1].base_score > 25.0:
-                neighbor_bonus = max(neighbor_bonus, 0.18 * doc_pages[i - 1].base_score)
-            if i + 1 < n_p and not p.is_toc and not p.is_exhibit and doc_pages[i + 1].base_score > 40.0:
-                neighbor_bonus = max(neighbor_bonus, 0.10 * doc_pages[i + 1].base_score)
-            p.final_score = p.doc_score + p.base_score + min(neighbor_bonus, 30.0)
+            if i > 0 and not p.is_toc and not p.is_exhibit:
+                prev_b = base_scores[(doc_pages[i - 1].document_id, doc_pages[i - 1].page_number)]
+                if prev_b > 25.0:
+                    neighbor_bonus = max(neighbor_bonus, 0.18 * prev_b)
+            if i + 1 < n_p and not p.is_toc and not p.is_exhibit:
+                next_b = base_scores[(doc_pages[i + 1].document_id, doc_pages[i + 1].page_number)]
+                if next_b > 40.0:
+                    neighbor_bonus = max(neighbor_bonus, 0.10 * next_b)
+            final_scores[loc] = d_score + b_score + min(neighbor_bonus, 30.0)
 
     ranked = sorted(
         all_pages,
-        key=lambda p: (-p.final_score, p.document_id, p.page_number),
+        key=lambda p: (-final_scores[(p.document_id, p.page_number)], p.document_id, p.page_number),
     )
 
     citations: list[MemoryCitation] = []
@@ -1276,8 +1667,11 @@ async def search_pdf_pages(
         location = (p.document_id, p.page_number)
         if location in seen_locations:
             continue
+        cit = citation_by_entry.get((p.entry_id, p.entry_version_id))
+        if cit is None:
+            continue
         seen_locations.add(location)
-        citations.append(p.citation)
+        citations.append(cit)
 
     return tuple(citations)
 
