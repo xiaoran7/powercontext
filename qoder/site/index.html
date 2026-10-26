@@ -3,330 +3,2570 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ScholarPulse：Qoder × OceanBase SeekDB × PowerContext 论文精读、概念图谱与自适应间隔复习助手。" />
   <title>ScholarPulse | Qoder × OceanBase SeekDB × PowerContext 论文精读与自适应闪卡助手</title>
   <style>
     :root {
-      --bg: #0f172a;
-      --card: #1e293b;
-      --border: #334155;
-      --accent: #38bdf8;
-      --emerald: #10b981;
-      --amber: #f59e0b;
-      --text: #f8fafc;
-      --muted: #94a3b8;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI",
+        "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei",
+        "Source Han Sans SC", "Noto Sans CJK SC", "WenQuanYi Micro Hei", Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: "JetBrains Mono", "SFMono-Regular", "SF Mono", Menlo, Consolas,
+        "Liberation Mono", "PingFang SC", "Microsoft YaHei UI", monospace;
+
+      --bg: #090d14;
+      --bg-glow: #0f1725;
+      --surface: #111925;
+      --surface-2: #16202e;
+      --surface-3: #1b2635;
+      --border: #23303f;
+      --border-soft: #1a2431;
+
+      --text: #e9eef7;
+      --text-2: #9dabc1;
+      --text-3: #64748b;
+
+      --accent: #4cc2ff;
+      --accent-dim: #2a90c9;
+      --accent-soft: rgba(76, 194, 255, 0.13);
+      --emerald: #34d399;
+      --emerald-soft: rgba(52, 211, 153, 0.13);
+      --amber: #fbbf24;
+      --amber-soft: rgba(251, 191, 36, 0.15);
+      --rose: #fb7185;
+      --rose-soft: rgba(251, 113, 133, 0.14);
+
+      --r-lg: 16px;
+      --r-md: 11px;
+      --r-sm: 7px;
+      --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+      --shadow-2: 0 4px 12px -4px rgba(0, 0, 0, 0.5), 0 18px 40px -20px rgba(0, 0, 0, 0.7);
+      --shadow-pop: 0 12px 32px -8px rgba(0, 0, 0, 0.7), 0 0 0 1px var(--border);
+
+      --step--1: 12px;
+      --step-0: 14px;
+      --step-1: 16px;
+      --step-2: 19px;
+      --step-3: 24px;
+      --step-4: clamp(26px, 3.4vw, 34px);
+
+      --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --dur-fast: 140ms;
+      --dur: 240ms;
+      --dur-slow: 420ms;
     }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { -webkit-text-size-adjust: 100%; }
+    body.is-locked { overflow: hidden; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: var(--bg);
+      font-family: var(--font-sans);
+      font-size: var(--step-0);
+      line-height: 1.75;
       color: var(--text);
-      line-height: 1.6;
-      padding: 28px;
+      background:
+        radial-gradient(1100px 520px at 50% -220px, var(--bg-glow) 0%, transparent 62%),
+        var(--bg);
+      background-attachment: fixed;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      font-synthesis-weight: none;
+      padding: clamp(20px, 3.2vw, 40px) clamp(16px, 4vw, 32px) 56px;
+      overflow-wrap: break-word;
     }
-    .container { max-width: 1160px; margin: 0 auto; }
-    header {
-      border: 1px solid var(--border);
-      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-      border-radius: 14px;
-      padding: 24px 28px;
-      margin-bottom: 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 16px;
+
+    .shell { max-width: 1180px; margin: 0 auto; }
+
+    @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    @keyframes shimmer { 0% { background-position: -220% 0; } 100% { background-position: 220% 0; } }
+    @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.45; transform: scale(0.82); } }
+    @keyframes pop-in { 0% { opacity: 0; transform: translateY(12px) scale(0.98); } 100% { opacity: 1; transform: none; } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes flash { 0% { box-shadow: 0 0 0 0 rgba(76, 194, 255, 0.5); } 100% { box-shadow: 0 0 0 14px rgba(76, 194, 255, 0); } }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(12px) scale(0.97); } to { opacity: 1; transform: none; } }
+
+    .stagger > * { animation: rise var(--dur-slow) var(--ease-out) both; }
+    .stagger > *:nth-child(1) { animation-delay: 0ms; }
+    .stagger > *:nth-child(2) { animation-delay: 45ms; }
+    .stagger > *:nth-child(3) { animation-delay: 90ms; }
+    .stagger > *:nth-child(4) { animation-delay: 135ms; }
+    .stagger > *:nth-child(5) { animation-delay: 180ms; }
+    .stagger > *:nth-child(6) { animation-delay: 225ms; }
+    .stagger > *:nth-child(n+7) { animation-delay: 260ms; }
+
+    .skeleton {
+      border-radius: var(--r-sm);
+      background: linear-gradient(100deg, var(--surface-2) 30%, var(--surface-3) 50%, var(--surface-2) 70%);
+      background-size: 220% 100%;
+      animation: shimmer 1.4s linear infinite;
+      color: transparent !important;
+      user-select: none;
     }
-    .badge {
-      display: inline-block;
-      padding: 5px 12px;
-      border-radius: 999px;
-      font-size: 12px;
+
+    /* ---------- 顶栏 ---------- */
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: start;
+      gap: 24px;
+      padding-bottom: 26px;
+      margin-bottom: 26px;
+      border-bottom: 1px solid var(--border-soft);
+    }
+    .brand { display: flex; align-items: flex-start; gap: 16px; min-width: 0; }
+    .brand-mark {
+      flex: none;
+      width: 46px; height: 46px;
+      margin-top: 3px;
+      display: grid; place-items: center;
+      border-radius: 13px;
+      background: linear-gradient(150deg, var(--accent) 0%, var(--accent-dim) 55%, #1d5e86 100%);
+      box-shadow: 0 6px 18px -8px rgba(76, 194, 255, 0.75);
+      color: #04121c;
+      font-weight: 800;
+      font-size: 15px;
+      letter-spacing: -0.02em;
+    }
+    .brand-text { min-width: 0; }
+    .eyebrow {
+      font-size: var(--step--1);
       font-weight: 600;
-      background: rgba(16, 185, 129, 0.15);
-      color: var(--emerald);
-      border: 1px solid rgba(16, 185, 129, 0.35);
-    }
-    .repo-link {
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
       color: var(--accent);
-      text-decoration: none;
-      font-weight: 600;
-      font-size: 13px;
+      margin-bottom: 3px;
     }
-    .section-grid-3 {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-      margin-bottom: 20px;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: 1.15fr 0.85fr;
-      gap: 20px;
-      margin-bottom: 20px;
-    }
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 20px;
-    }
-    h1 { font-size: 22px; margin-bottom: 6px; }
-    h2 { font-size: 16px; color: var(--accent); margin-bottom: 12px; }
-    h3 { font-size: 14px; color: var(--emerald); margin-bottom: 6px; }
-    .controls {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 12px;
-      flex-wrap: wrap;
-    }
-    input[type="text"], select {
-      padding: 9px 12px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: #0b1120;
-      color: var(--text);
-      font-size: 13.5px;
-    }
-    input[type="text"] { flex: 1; min-width: 240px; }
-    button {
-      padding: 9px 16px;
-      border-radius: 8px;
-      border: none;
-      background: var(--accent);
-      color: #0f172a;
+    h1 {
+      font-size: var(--step-4);
+      line-height: 1.24;
       font-weight: 700;
+      letter-spacing: -0.022em;
+      text-wrap: balance;
+    }
+    .lede {
+      margin-top: 6px;
+      color: var(--text-2);
+      font-size: var(--step-1);
+      max-width: 62ch;
+      text-wrap: pretty;
+    }
+    .topbar-side { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+    .topbar-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 7px 14px 7px 11px;
+      border-radius: 999px;
+      font-size: var(--step--1);
+      font-weight: 600;
+      color: var(--emerald);
+      background: var(--emerald-soft);
+      border: 1px solid rgba(52, 211, 153, 0.28);
+      white-space: nowrap;
+      transition: color var(--dur) var(--ease), background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+    }
+    .status-pill[data-tone="local"] { color: var(--amber); background: var(--amber-soft); border-color: rgba(251, 191, 36, 0.3); }
+    .status-pill[data-busy="1"] { color: var(--text-2); background: var(--surface-2); border-color: var(--border); }
+    .status-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 22%, transparent);
+    }
+    .status-pill[data-busy="1"] .status-dot { animation: pulse-dot 1.1s var(--ease) infinite; }
+
+    .repo-link {
+      display: inline-flex; align-items: center; gap: 7px;
+      color: var(--text-2);
+      text-decoration: none;
+      font-size: var(--step--1);
+      font-weight: 500;
+      transition: color var(--dur-fast) var(--ease);
+    }
+    .repo-link:hover { color: var(--accent); }
+    .repo-link svg { opacity: .7; }
+
+    /* ---------- 指标条 ---------- */
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+    .metric {
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-md);
+      padding: 16px 18px 15px;
+      box-shadow: var(--shadow-1);
+      min-width: 0;
+      transition: border-color var(--dur) var(--ease), transform var(--dur) var(--ease);
+    }
+    .metric:hover { border-color: var(--border); transform: translateY(-2px); }
+    .metric-label {
+      font-size: var(--step--1);
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      color: var(--text-3);
+      margin-bottom: 7px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .metric-value {
+      font-size: var(--step-3);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      font-variant-numeric: tabular-nums;
+      color: var(--text);
+    }
+    .metric-value em {
+      font-style: normal;
+      font-size: var(--step-1);
+      font-weight: 600;
+      color: var(--text-3);
+      margin-left: 4px;
+      letter-spacing: 0;
+    }
+    .metric-sub {
+      margin-top: 4px;
+      font-size: var(--step--1);
+      color: var(--text-3);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .metric-value.is-accent { color: var(--accent); }
+    .metric-value.is-emerald { color: var(--emerald); }
+    .metric-value.is-amber { color: var(--amber); }
+
+    /* ---------- 布局 ---------- */
+    .workspace { display: grid; grid-template-columns: minmax(0, 1.32fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+    .stack { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-lg);
+      box-shadow: var(--shadow-1);
+      overflow: hidden;
+      min-width: 0;
+    }
+    .card-head {
+      display: flex; align-items: baseline; justify-content: space-between;
+      gap: 14px;
+      padding: 17px 20px 15px;
+      border-bottom: 1px solid var(--border-soft);
+    }
+    .card-title { font-size: var(--step-2); font-weight: 650; letter-spacing: -0.012em; }
+    .card-title .idx {
+      font-size: var(--step--1);
+      font-weight: 700;
+      color: var(--accent);
+      margin-right: 8px;
+      font-variant-numeric: tabular-nums;
+    }
+    .card-note { font-size: var(--step--1); color: var(--text-3); text-align: right; }
+    .card-body { padding: 18px 20px 20px; }
+
+    /* ---------- 控件 ---------- */
+    .controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: stretch; }
+    .controls-row { flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+    .field { flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+    .field-full { flex: 1 1 100%; }
+    .field-auto { flex: 0 0 auto; }
+    .field-end { margin-left: auto; justify-content: flex-end; }
+    .field-label {
+      font-size: var(--step--1);
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--text-3);
+    }
+    textarea, .text-input {
+      width: 100%;
+      font-family: inherit;
+      font-size: var(--step-0);
+      line-height: 1.6;
+      color: var(--text);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      padding: 11px 13px;
+      resize: none;
+      transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+    }
+    textarea { min-height: 62px; }
+    textarea::placeholder, .text-input::placeholder { color: var(--text-3); }
+    textarea:focus, .text-input:focus {
+      outline: none;
+      border-color: var(--accent-dim);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+      background: var(--bg-glow);
+    }
+
+    .select { position: relative; flex: 0 0 auto; min-width: 208px; }
+    .select-trigger {
+      width: 100%;
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 0 12px 0 13px;
+      height: 42px;
+      font-family: inherit;
+      font-size: var(--step-0);
+      color: var(--text);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
       cursor: pointer;
+      transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
     }
-    pre {
-      background: #0b1120;
+    .select-trigger:hover { border-color: #2f3f52; background: var(--bg-glow); }
+    .select-trigger:focus-visible { outline: none; border-color: var(--accent-dim); box-shadow: 0 0 0 3px var(--accent-soft); }
+    .select-trigger[aria-expanded="true"] { border-color: var(--accent-dim); box-shadow: 0 0 0 3px var(--accent-soft); }
+    .select-value {
+      font-family: var(--font-mono); font-size: 13px; letter-spacing: -0.01em;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .select-chevron { flex: none; color: var(--text-3); transition: transform var(--dur) var(--ease); }
+    .select-trigger[aria-expanded="true"] .select-chevron { transform: rotate(180deg); color: var(--accent); }
+    .select-menu {
+      position: absolute; z-index: 40;
+      top: calc(100% + 6px); left: 0; right: 0;
+      padding: 5px;
+      background: var(--surface-2);
       border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 14px;
-      font-size: 12.5px;
-      overflow-x: auto;
-      color: #e2e8f0;
-      white-space: pre-wrap;
+      border-radius: var(--r-md);
+      box-shadow: var(--shadow-pop);
+      max-height: 264px; overflow-y: auto;
+      display: none;
+      transform-origin: top center;
+      animation: pop-in var(--dur-fast) var(--ease-out) both;
     }
+    .select[data-open="true"] .select-menu { display: block; }
+    .select-option {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      width: 100%; padding: 8px 10px;
+      border: 0; border-radius: var(--r-sm);
+      background: transparent; color: var(--text-2);
+      font-family: inherit; font-size: var(--step-0);
+      text-align: left; cursor: pointer;
+      transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+    }
+    .select-option:hover, .select-option.is-active { background: var(--surface-3); color: var(--text); }
+    .select-option[aria-selected="true"] { color: var(--accent); }
+    .select-option .opt-name { font-family: var(--font-mono); font-size: 13px; }
+    .select-option .opt-meta { font-size: var(--step--1); color: var(--text-3); flex: none; }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      height: 42px; padding: 0 18px;
+      border: 1px solid transparent;
+      border-radius: var(--r-md);
+      font-family: inherit; font-size: var(--step-0); font-weight: 600;
+      cursor: pointer; white-space: nowrap;
+      transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease),
+        color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+    }
+    .btn:active { transform: translateY(1px) scale(0.99); }
+    .btn-primary { background: var(--accent); color: #04121c; }
+    .btn-primary:hover { background: #6ccdff; box-shadow: 0 6px 20px -8px rgba(76, 194, 255, 0.8); }
+    .btn-ghost { background: var(--surface-2); color: var(--text-2); border-color: var(--border); }
+    .btn-ghost:hover { color: var(--text); border-color: #2f3f52; background: var(--surface-3); }
+    .btn-accent { background: var(--emerald-soft); color: var(--emerald); border-color: rgba(52, 211, 153, 0.3); }
+    .btn-accent:hover { background: rgba(52, 211, 153, 0.2); }
+    .btn:disabled { opacity: .55; cursor: progress; transform: none; }
+    .btn-sm { height: 32px; padding: 0 12px; font-size: var(--step--1); border-radius: var(--r-sm); }
+    .btn .spin { animation: spin 900ms linear infinite; }
+    .count-badge {
+      min-width: 20px; height: 20px; padding: 0 6px;
+      display: inline-grid; place-items: center;
+      border-radius: 999px;
+      background: var(--rose); color: #1a0b0e;
+      font-size: 11px; font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+    .count-badge[hidden] { display: none; }
+
+    /* ---------- 代码面板 ---------- */
+    .panel {
+      margin-top: 16px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      overflow: hidden;
+      transition: border-color var(--dur) var(--ease);
+    }
+    .panel.is-scanning { border-color: var(--accent-dim); }
+    .panel-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 9px 10px 9px 14px;
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border);
+    }
+    .panel-title {
+      display: flex; align-items: center; gap: 9px;
+      font-size: var(--step--1); font-weight: 600; color: var(--text-2); letter-spacing: 0.02em;
+    }
+    .panel-title::before {
+      content: ""; width: 8px; height: 8px; border-radius: 50%;
+      background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+    .panel.is-scanning .panel-title::before { animation: flash 1.1s var(--ease) infinite; }
+    .panel-actions { display: flex; align-items: center; gap: 8px; }
+    .panel-meta { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+    .panel-body {
+      font-family: var(--font-mono);
+      font-size: 12.5px; line-height: 1.85;
+      color: #cbd5e5;
+      padding: 14px 16px 16px;
+      max-height: 400px; overflow: auto;
+      white-space: pre-wrap; word-break: break-word;
+    }
+    .panel-body .t-marker { color: var(--accent); font-weight: 600; }
+    .panel-body .t-key { color: var(--emerald); }
+    .panel-body .t-value { color: #e6edf7; }
+    .panel-body .t-ref { color: var(--amber); }
+    .panel-body .t-span { color: #93c5fd; }
+
+    /* ---------- 引用 / 图谱 / 文献库 ---------- */
+    .subhead {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      margin: 18px 0 9px;
+      font-size: var(--step--1); font-weight: 600;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      color: var(--text-3);
+    }
+    .subhead:first-child { margin-top: 0; }
+    .rows { display: flex; flex-direction: column; gap: 6px; }
+    .row {
+      display: flex; align-items: baseline; gap: 10px;
+      padding: 8px 11px;
+      background: var(--surface-2);
+      border: 1px solid transparent;
+      border-radius: var(--r-sm);
+      font-size: var(--step--1); color: var(--text-2);
+      transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+    }
+    .row:hover { border-color: var(--border); background: var(--surface-3); }
+    .row code { font-family: var(--font-mono); font-size: 12px; color: var(--accent); flex: none; }
+    .row .row-main { min-width: 0; }
+    .row .row-title { color: var(--text); }
+    .row .row-sub { color: var(--text-3); }
+    .row-action { margin-left: auto; flex: none; }
+
+    .paper {
+      display: flex; align-items: flex-start; gap: 10px;
+      width: 100%; text-align: left;
+      padding: 10px 11px;
+      background: var(--surface-2);
+      border: 1px solid transparent;
+      border-radius: var(--r-sm);
+      color: inherit;
+      font-family: inherit;
+      cursor: pointer;
+      transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+    }
+    .paper + .paper { margin-top: 6px; }
+    .paper:hover { border-color: var(--border); background: var(--surface-3); transform: translateX(2px); }
+    .paper.is-scoped { border-color: var(--accent-dim); background: var(--accent-soft); }
+    .paper-title { font-size: var(--step-0); font-weight: 600; color: var(--text); margin-bottom: 3px; }
+    .paper-meta { display: flex; flex-wrap: wrap; gap: 6px; font-size: var(--step--1); color: var(--text-3); }
+    .paper-sections { color: var(--text-3); font-size: var(--step--1); margin-top: 4px; }
+
+    /* ---------- 闪卡 ---------- */
     .flashcard {
-      border: 1px solid var(--border);
-      background: #0b1120;
-      border-radius: 10px;
-      padding: 14px;
-      margin-bottom: 12px;
+      position: relative;
+      padding: 14px 15px 14px 18px;
+      background: var(--surface-2);
+      border: 1px solid transparent;
+      border-radius: var(--r-md);
+      overflow: hidden;
+      transition: border-color var(--dur) var(--ease), transform var(--dur) var(--ease);
     }
-    .flashcard.weak {
-      border-color: var(--amber);
+    .flashcard + .flashcard { margin-top: 9px; }
+    .flashcard::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--border); }
+    .flashcard[data-priority="high_weak_topic"] { border-color: rgba(251, 191, 36, 0.3); background: linear-gradient(90deg, var(--amber-soft) 0%, var(--surface-2) 45%); }
+    .flashcard[data-priority="high_weak_topic"]::before { background: var(--amber); }
+    .flashcard[data-priority="low_mastered"] { opacity: .62; }
+    .flashcard[data-priority="low_mastered"]::before { background: var(--emerald); }
+    .flashcard[data-due="true"] { border-color: rgba(251, 113, 133, 0.34); }
+    .flashcard[data-due="true"]::before { background: var(--rose); }
+    .flashcard:hover { transform: translateY(-1px); border-color: var(--border); }
+    .flashcard-meta { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-bottom: 7px; }
+    .flashcard-id { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-3); }
+    .tag {
+      font-size: 11px; font-weight: 600; padding: 2px 8px;
+      border-radius: 999px; letter-spacing: 0.01em; white-space: nowrap;
     }
-    .priority-tag {
-      font-size: 11px;
-      padding: 2px 8px;
-      border-radius: 6px;
-      background: rgba(245, 158, 11, 0.2);
-      color: var(--amber);
-      margin-left: 8px;
+    .tag-weak { color: var(--amber); background: var(--amber-soft); }
+    .tag-mastered { color: var(--emerald); background: var(--emerald-soft); }
+    .tag-review { color: var(--accent); background: var(--accent-soft); }
+    .tag-due { color: var(--rose); background: var(--rose-soft); }
+    .tag-plain { color: var(--text-3); background: var(--surface-3); }
+    .flashcard-q { font-size: var(--step-0); font-weight: 600; line-height: 1.6; color: var(--text); margin-bottom: 7px; text-wrap: pretty; }
+    .flashcard-a { font-size: var(--step--1); line-height: 1.7; color: var(--text-2); padding-left: 11px; border-left: 2px solid var(--border); text-wrap: pretty; }
+    .flashcard-a b { color: var(--accent); font-weight: 700; margin-right: 5px; }
+    .flashcard-foot { display: flex; gap: 8px; margin-top: 10px; }
+
+    /* ---------- 记忆条 ---------- */
+    .memory-strip {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+      margin-top: 14px; padding: 11px 13px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-md);
+      font-size: var(--step--1);
     }
-    .flashcard-q { font-weight: 600; color: var(--accent); margin-bottom: 6px; font-size: 13.5px; }
-    .flashcard-a { font-size: 13px; color: var(--text); }
-    .stat-num { font-size: 24px; font-weight: 800; color: var(--emerald); }
-    footer {
-      margin-top: 20px;
+    .memory-key { color: var(--text-3); font-weight: 600; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px; border-radius: 999px;
+      background: var(--surface-3); border: 1px solid var(--border);
+      color: var(--text-2); font-size: 11.5px; font-family: var(--font-mono);
+      transition: border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+    }
+    .chip-weak { color: var(--amber); border-color: rgba(251, 191, 36, 0.32); background: var(--amber-soft); }
+    .chip-mastered { color: var(--emerald); border-color: rgba(52, 211, 153, 0.32); background: var(--emerald-soft); }
+    .chip-accent { color: var(--accent); border-color: rgba(76, 194, 255, 0.32); background: var(--accent-soft); }
+    .memory-note { color: var(--text-3); font-style: italic; }
+    .memory-empty { color: var(--text-3); }
+
+    .empty {
+      padding: 16px; text-align: center;
+      font-size: var(--step--1); color: var(--text-3);
+      background: var(--surface-2);
+      border: 1px dashed var(--border);
+      border-radius: var(--r-md);
+    }
+
+    /* ---------- 抽屉 / 弹层 ---------- */
+    .scrim {
+      position: fixed; inset: 0; z-index: 60;
+      background: rgba(4, 8, 14, 0.68);
+      backdrop-filter: blur(3px);
+      opacity: 0; pointer-events: none;
+      transition: opacity var(--dur) var(--ease);
+    }
+    .scrim[data-open="true"] { opacity: 1; pointer-events: auto; }
+
+    .drawer {
+      position: fixed; z-index: 70; top: 0; right: 0; bottom: 0;
+      width: min(560px, 100%);
+      display: flex; flex-direction: column;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      box-shadow: var(--shadow-2);
+      transform: translateX(100%);
+      transition: transform var(--dur-slow) var(--ease-out);
+    }
+    .drawer[data-open="true"] { transform: none; }
+    .drawer-head {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;
+      padding: 20px 22px 16px;
+      border-bottom: 1px solid var(--border-soft);
+    }
+    .drawer-title { font-size: var(--step-2); font-weight: 650; letter-spacing: -0.012em; }
+    .drawer-sub { font-size: var(--step--1); color: var(--text-3); margin-top: 3px; }
+    .drawer-body { flex: 1; overflow-y: auto; padding: 18px 22px 24px; display: flex; flex-direction: column; gap: 16px; }
+    .drawer-foot {
+      display: flex; gap: 10px; justify-content: flex-end; align-items: center;
+      padding: 14px 22px 18px; border-top: 1px solid var(--border-soft); background: var(--surface);
+    }
+    .icon-btn {
+      width: 32px; height: 32px; display: grid; place-items: center;
+      border-radius: var(--r-sm); border: 1px solid var(--border);
+      background: var(--surface-2); color: var(--text-2); cursor: pointer;
+      transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+    }
+    .icon-btn:hover { color: var(--text); border-color: #2f3f52; background: var(--surface-3); }
+
+    .dropzone {
+      border: 1.5px dashed var(--border);
+      border-radius: var(--r-md);
+      padding: 22px 16px;
       text-align: center;
-      font-size: 12px;
-      color: var(--muted);
+      color: var(--text-3);
+      font-size: var(--step--1);
+      background: var(--bg);
+      cursor: pointer;
+      transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease), color var(--dur) var(--ease);
     }
-    @media (max-width: 900px) {
-      .section-grid-3, .grid { grid-template-columns: 1fr; }
+    .dropzone:hover, .dropzone.is-over { border-color: var(--accent-dim); background: var(--accent-soft); color: var(--text-2); }
+    .dropzone strong { color: var(--accent); font-weight: 600; }
+
+    .parsed-row {
+      background: var(--surface-2);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-md);
+      padding: 12px 13px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .parsed-head { display: flex; align-items: center; gap: 8px; }
+    .parsed-idx {
+      width: 22px; height: 22px; flex: none;
+      display: grid; place-items: center;
+      border-radius: 6px; background: var(--accent-soft); color: var(--accent);
+      font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums;
+    }
+    .parsed-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .parsed-grid .span-2 { grid-column: 1 / -1; }
+
+    /* ---------- 复习会话 ---------- */
+    .session {
+      position: fixed; z-index: 80; inset: 0;
+      display: grid; place-items: center;
+      padding: 20px;
+      opacity: 0; pointer-events: none;
+      transition: opacity var(--dur) var(--ease);
+    }
+    .session[data-open="true"] { opacity: 1; pointer-events: auto; }
+    .session-card {
+      width: min(720px, 100%);
+      max-height: 88vh; overflow-y: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      box-shadow: var(--shadow-2);
+      transform: translateY(14px) scale(0.98);
+      transition: transform var(--dur-slow) var(--ease-out);
+    }
+    .session[data-open="true"] .session-card { transform: none; }
+    .session-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 14px;
+      padding: 16px 20px 14px; border-bottom: 1px solid var(--border-soft);
+    }
+    .session-progress { flex: 1; height: 4px; border-radius: 999px; background: var(--surface-3); overflow: hidden; }
+    .session-progress > span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), var(--emerald)); transition: width var(--dur-slow) var(--ease-out); }
+    .session-body { padding: 24px 22px; }
+    .session-q { font-size: var(--step-3); font-weight: 650; line-height: 1.5; letter-spacing: -0.015em; text-wrap: pretty; }
+    .session-meta { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 14px; }
+    .session-answer {
+      margin-top: 16px; padding: 14px 15px;
+      background: var(--bg); border: 1px solid var(--border); border-radius: var(--r-md);
+      font-size: var(--step-0); line-height: 1.8; color: var(--text-2);
+      animation: rise var(--dur) var(--ease-out) both;
+    }
+    .session-foot { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 22px 20px; }
+    .grade-btn { flex: 1 1 120px; }
+    .grade-btn[data-grade="0"] { color: var(--rose); border-color: rgba(251, 113, 133, 0.32); background: var(--rose-soft); }
+    .grade-btn[data-grade="3"] { color: var(--amber); border-color: rgba(251, 191, 36, 0.32); background: var(--amber-soft); }
+    .grade-btn[data-grade="4"] { color: var(--accent); border-color: rgba(76, 194, 255, 0.32); background: var(--accent-soft); }
+    .grade-btn[data-grade="5"] { color: var(--emerald); border-color: rgba(52, 211, 153, 0.32); background: var(--emerald-soft); }
+    .session-summary { text-align: center; padding: 12px 0 6px; }
+    .session-summary .big { font-size: 40px; font-weight: 800; letter-spacing: -0.03em; color: var(--accent); font-variant-numeric: tabular-nums; }
+    .session-summary p { color: var(--text-2); margin-top: 4px; }
+
+    /* ---------- 提示条 ---------- */
+    .toasts {
+      position: fixed; z-index: 90; right: 18px; bottom: 18px;
+      display: flex; flex-direction: column; gap: 8px;
+      pointer-events: none;
+    }
+    .toast {
+      pointer-events: auto;
+      display: flex; align-items: flex-start; gap: 10px;
+      min-width: 240px; max-width: 380px;
+      padding: 11px 13px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: var(--r-md);
+      box-shadow: var(--shadow-2);
+      font-size: var(--step--1);
+      color: var(--text);
+      animation: toast-in var(--dur) var(--ease-out) both;
+    }
+    .toast[data-tone="ok"] { border-left-color: var(--emerald); }
+    .toast[data-tone="warn"] { border-left-color: var(--amber); }
+    .toast[data-tone="err"] { border-left-color: var(--rose); }
+    .toast.is-out { animation: toast-in var(--dur) var(--ease) reverse both; }
+
+    /* ---------- 页脚 ---------- */
+    .footer {
+      margin-top: 30px; padding-top: 18px;
+      border-top: 1px solid var(--border-soft);
+      display: flex; flex-wrap: wrap; gap: 8px 18px;
+      justify-content: space-between;
+      font-size: var(--step--1); color: var(--text-3);
+    }
+    .footer code { font-family: var(--font-mono); color: var(--text-2); }
+
+    @media (max-width: 980px) {
+      .workspace { grid-template-columns: minmax(0, 1fr); }
+      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .topbar { grid-template-columns: minmax(0, 1fr); }
+      .topbar-side { align-items: flex-start; }
+      .topbar-actions { justify-content: flex-start; }
+    }
+    @media (max-width: 560px) {
+      .metrics { grid-template-columns: minmax(0, 1fr); }
+      .controls, .controls-row { flex-direction: column; align-items: stretch; }
+      .field-end { margin-left: 0; }
+      .select { min-width: 0; width: 100%; }
+      .parsed-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ---------- 视图切换标签页 ---------- */
+    .view-tabs {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 3px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-md);
+    }
+    .view-tab {
+      padding: 4px 11px;
+      font-size: var(--step--1);
+      font-weight: 600;
+      color: var(--text-3);
+      border: none;
+      background: transparent;
+      border-radius: var(--r-sm);
+      cursor: pointer;
+      transition: all var(--dur-fast) var(--ease);
+    }
+    .view-tab:hover { color: var(--text); }
+    .view-tab.is-active {
+      color: var(--accent);
+      background: var(--surface-3);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+
+    /* ---------- AI 综合综述面板 ---------- */
+    .synthesis-wrap {
+      display: flex; flex-direction: column; gap: 12px;
+      margin-top: 14px;
+    }
+    .synthesis-summary-card {
+      padding: 14px 16px;
+      background: linear-gradient(135deg, rgba(76, 194, 255, 0.08) 0%, rgba(52, 211, 153, 0.04) 100%), var(--surface-2);
+      border: 1px solid rgba(76, 194, 255, 0.28);
+      border-radius: var(--r-md);
+      position: relative;
+      overflow: hidden;
+    }
+    .synthesis-summary-card::before {
+      content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+      background: var(--accent);
+    }
+    .synthesis-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 6px;
+    }
+    .synthesis-text {
+      font-size: var(--step-0); line-height: 1.7; color: var(--text);
+      text-wrap: pretty;
+    }
+    .synthesis-paragraphs {
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .synthesis-para {
+      padding: 12px 14px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-md);
+      font-size: var(--step--1);
+      line-height: 1.75;
+      color: var(--text-2);
+    }
+    .synthesis-para strong { color: var(--text); font-weight: 600; }
+    .cite-badge {
+      display: inline-flex; align-items: center;
+      padding: 1px 7px; margin: 0 2px;
+      border-radius: 4px;
+      font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+      color: var(--accent); background: var(--accent-soft);
+      border: 1px solid rgba(76, 194, 255, 0.25);
+      cursor: pointer;
+      transition: all var(--dur-fast) var(--ease);
+      vertical-align: baseline;
+    }
+    .cite-badge:hover {
+      background: var(--accent); color: #04121c;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(76, 194, 255, 0.4);
+    }
+    .tradeoff-card {
+      padding: 12px 14px;
+      background: var(--surface-2);
+      border: 1px solid rgba(251, 191, 36, 0.25);
+      border-left: 3px solid var(--amber);
+      border-radius: var(--r-md);
+      font-size: var(--step--1);
+      line-height: 1.7;
+      color: var(--text-2);
+    }
+    .tradeoff-card strong { color: var(--amber); font-weight: 600; }
+    .open-questions {
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .open-q-item {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 8px 12px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-sm);
+      font-size: var(--step--1);
+      color: var(--text-2);
+    }
+    .open-q-item::before {
+      content: "?";
+      width: 18px; height: 18px; flex: none;
+      display: grid; place-items: center;
+      border-radius: 50%;
+      background: var(--surface-3);
+      color: var(--accent);
+      font-weight: 700; font-size: 11px;
+    }
+
+    /* ---------- 3D 翻转闪卡 ---------- */
+    .flashcard-3d-wrap {
+      perspective: 1200px;
+      margin-top: 10px;
+    }
+    .flashcard-3d-wrap:first-child { margin-top: 0; }
+    .flashcard-inner {
+      position: relative;
+      width: 100%;
+      transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+      transform-style: preserve-3d;
+    }
+    .flashcard-3d-wrap.is-flipped .flashcard-inner {
+      transform: rotateY(180deg);
+    }
+    .flashcard-front, .flashcard-back {
+      width: 100%;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      position: relative;
+      padding: 14px 15px 14px 18px;
+      background: var(--surface-2);
+      border: 1px solid transparent;
+      border-radius: var(--r-md);
+      overflow: hidden;
+      transition: border-color var(--dur) var(--ease);
+    }
+    .flashcard-front::before, .flashcard-back::before {
+      content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--border);
+    }
+    .flashcard-3d-wrap[data-priority="high_weak_topic"] .flashcard-front,
+    .flashcard-3d-wrap[data-priority="high_weak_topic"] .flashcard-back {
+      border-color: rgba(251, 191, 36, 0.3);
+      background: linear-gradient(90deg, var(--amber-soft) 0%, var(--surface-2) 45%);
+    }
+    .flashcard-3d-wrap[data-priority="high_weak_topic"] .flashcard-front::before,
+    .flashcard-3d-wrap[data-priority="high_weak_topic"] .flashcard-back::before { background: var(--amber); }
+    .flashcard-3d-wrap[data-priority="low_mastered"] .flashcard-front,
+    .flashcard-3d-wrap[data-priority="low_mastered"] .flashcard-back { opacity: .62; }
+    .flashcard-3d-wrap[data-priority="low_mastered"] .flashcard-front::before,
+    .flashcard-3d-wrap[data-priority="low_mastered"] .flashcard-back::before { background: var(--emerald); }
+    .flashcard-3d-wrap[data-due="true"] .flashcard-front,
+    .flashcard-3d-wrap[data-due="true"] .flashcard-back { border-color: rgba(251, 113, 133, 0.34); }
+    .flashcard-3d-wrap[data-due="true"] .flashcard-front::before,
+    .flashcard-3d-wrap[data-due="true"] .flashcard-back::before { background: var(--rose); }
+
+    .flashcard-back {
+      position: absolute;
+      inset: 0;
+      transform: rotateY(180deg);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: var(--surface-3);
+    }
+    .flashcard-flip-btn {
+      margin-left: auto;
+      font-size: 11.5px;
+      color: var(--text-3);
+      background: transparent;
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-sm);
+      padding: 3px 8px;
+      cursor: pointer;
+      display: inline-flex; align-items: center; gap: 4px;
+      transition: all var(--dur-fast) var(--ease);
+    }
+    .flashcard-flip-btn:hover { color: var(--accent); border-color: var(--accent-dim); }
+
+    /* ---------- 可视化拓扑图谱 ---------- */
+    .graph-container {
+      width: 100%;
+      height: 270px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      position: relative;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+    .graph-svg {
+      width: 100%; height: 100%;
+      display: block;
+    }
+    .graph-node {
+      cursor: pointer;
+      transition: transform 0.2s ease, filter 0.2s ease;
+    }
+    .graph-node:hover {
+      filter: drop-shadow(0 0 8px rgba(76, 194, 255, 0.6));
+    }
+    .graph-node-circle {
+      stroke-width: 2px;
+      transition: all 0.2s ease;
+    }
+    .graph-node-text {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 600;
+      fill: var(--text);
+      text-anchor: middle;
+      pointer-events: none;
+    }
+    .graph-link {
+      stroke: var(--border);
+      stroke-width: 1.5px;
+      stroke-dasharray: 4, 3;
+      transition: stroke 0.2s ease;
+    }
+    .graph-link.is-active {
+      stroke: var(--accent);
+      stroke-dasharray: none;
+      stroke-width: 2px;
+    }
+    .graph-tooltip {
+      position: absolute;
+      z-index: 50;
+      pointer-events: none;
+      padding: 8px 12px;
+      background: var(--surface-3);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      box-shadow: var(--shadow-pop);
+      font-size: 12px;
+      color: var(--text);
+      max-width: 240px;
+      opacity: 0;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+      transform: translateY(4px);
+    }
+    .graph-tooltip.is-visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    /* ---------- 文献预设选择 ---------- */
+    .preset-row {
+      display: flex; flex-direction: column; gap: 8px;
+      padding: 12px 14px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-md);
+    }
+    .preset-title {
+      font-size: var(--step--1);
+      font-weight: 600;
+      color: var(--text-3);
+    }
+    .preset-chips {
+      display: flex; flex-wrap: wrap; gap: 6px;
+    }
+    .preset-chip {
+      padding: 4px 10px;
+      font-size: 12px;
+      font-family: inherit;
+      color: var(--text-2);
+      background: var(--surface-3);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      cursor: pointer;
+      transition: all var(--dur-fast) var(--ease);
+    }
+    .preset-chip:hover {
+      color: var(--accent);
+      border-color: var(--accent-dim);
+      background: var(--accent-soft);
+      transform: translateY(-1px);
+    }
+
+    /* ---------- 文献精读弹窗 ---------- */
+    .modal {
+      position: fixed; z-index: 85; inset: 0;
+      display: grid; place-items: center;
+      padding: 20px;
+      opacity: 0; pointer-events: none;
+      transition: opacity var(--dur) var(--ease);
+    }
+    .modal[data-open="true"] { opacity: 1; pointer-events: auto; }
+    .modal-card {
+      width: min(760px, 100%);
+      max-height: 88vh; overflow-y: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      box-shadow: var(--shadow-2);
+      display: flex; flex-direction: column;
+      transform: translateY(14px) scale(0.98);
+      transition: transform var(--dur-slow) var(--ease-out);
+    }
+    .modal[data-open="true"] .modal-card { transform: none; }
+    .modal-head {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;
+      padding: 18px 22px 14px; border-bottom: 1px solid var(--border-soft);
+    }
+    .modal-body {
+      padding: 22px; display: flex; flex-direction: column; gap: 16px;
+    }
+    .modal-foot {
+      padding: 14px 22px 18px; border-top: 1px solid var(--border-soft);
+      display: flex; justify-content: flex-end; gap: 10px;
+    }
+    .highlight-span {
+      background: rgba(76, 194, 255, 0.22);
+      border-bottom: 2px solid var(--accent);
+      color: #fff;
+      padding: 0 2px;
+      border-radius: 2px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <div>
-        <h1>ScholarPulse：用 Qoder 打造的论文精读与自适应闪卡教练</h1>
-        <p style="color: var(--muted); font-size: 13.5px; margin-bottom: 6px;">
-          结合 OceanBase SeekDB 单 SQL 向量+全文混合检索与 PowerContext 学习者薄弱点记忆复用
-        </p>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">SP</div>
+        <div class="brand-text">
+          <div class="eyebrow">Qoder × OceanBase SeekDB × PowerContext</div>
+          <h1>ScholarPulse 论文精读与自适应闪卡教练</h1>
+          <p class="lede">
+            单条 SQL 同时召回 512 维向量与 IK 全文命中并按 RRF 融合排序；在严格字节预算内装配可回查的证据区间，按薄弱点置顶复习闪卡。
+          </p>
+        </div>
+      </div>
+      <div class="topbar-side">
+        <div class="topbar-actions">
+          <button type="button" class="btn btn-ghost" id="btn-import">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M8 11V3m0 0L5 6m3-3 3 3M2.5 10.5v1.75A1.75 1.75 0 0 0 4.25 14h7.5A1.75 1.75 0 0 0 13.5 12.25V10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            导入论文
+          </button>
+          <button type="button" class="btn btn-accent" id="btn-review">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M8 4.5V8l2.25 2.25M14 8A6 6 0 1 1 2 8a6 6 0 0 1 12 0Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            开始复习
+            <span class="count-badge" id="due-badge" hidden>0</span>
+          </button>
+        </div>
+        <span class="status-pill" id="backend-badge" data-busy="1">
+          <span class="status-dot"></span><span id="backend-text">正在初始化…</span>
+        </span>
         <a class="repo-link" href="https://github.com/xiaoran7/powercontext/tree/2026-competition-ecosystem/qoder" target="_blank" rel="noopener">
-          GitHub 代码仓库：https://github.com/xiaoran7/powercontext/tree/2026-competition-ecosystem/qoder
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/>
+          </svg>
+          代码仓库
         </a>
       </div>
-      <span class="badge">Qoder Sites 公开体验版 | SeekDB + PowerContext</span>
     </header>
 
-    <div class="section-grid-3">
-      <div class="card">
-        <h3>痛点 1：跨论文检索割裂 → SeekDB 混合检索</h3>
-        <p style="font-size: 13px; color: var(--muted);">
-          计算机系统论文包含大量缩写（如 VSAG、Delta HNSW、RRF k=60）。SeekDB 通过单条 SQL 融合 512 维 HNSW 向量与 IK 全文索引，精确定位段落出处。
-        </p>
+    <section class="metrics" aria-label="本次检索指标">
+      <div class="metric">
+        <div class="metric-label">双通道召回</div>
+        <div class="metric-value" id="m-retrieval"><span class="skeleton">—</span></div>
+        <div class="metric-sub" id="m-retrieval-sub">向量 / 全文 命中分布</div>
       </div>
-      <div class="card">
-        <h3>痛点 2：读后即忘 → PowerContext 薄弱点记忆</h3>
-        <p style="font-size: 13px; color: var(--muted);">
-          PowerContext 持久化记录每位学习者的薄弱主题与已掌握文献，跨会话复用记忆并在字节预算内生成 PreparedContext V1 简报与优先复习闪卡。
-        </p>
+      <div class="metric">
+        <div class="metric-label">可回查引用</div>
+        <div class="metric-value is-accent" id="m-citations"><span class="skeleton">—</span></div>
+        <div class="metric-sub" id="m-citations-sub">证据区间数量</div>
       </div>
-      <div class="card">
-        <h3>痛点 3：科研流碎片化 → Qoder 全流程构建</h3>
-        <p style="font-size: 13px; color: var(--muted);">
-          由 Qoder 完成需求拆解、SeekDB 存储引擎编码、PowerContext 记忆状态联调及 Qoder Sites 公开站点一键发布。
-        </p>
+      <div class="metric">
+        <div class="metric-label">字节预算</div>
+        <div class="metric-value is-emerald" id="m-budget"><span class="skeleton">—</span></div>
+        <div class="metric-sub" id="m-budget-sub">PreparedContext V1 占用</div>
       </div>
-    </div>
+      <div class="metric">
+        <div class="metric-label">复习队列</div>
+        <div class="metric-value" id="m-flashcards"><span class="skeleton">—</span></div>
+        <div class="metric-sub" id="m-flashcards-sub">薄弱点置顶 / 总数</div>
+      </div>
+    </section>
 
-    <div class="grid">
-      <div class="card">
-        <h2>1. 在线交互体验：混合检索 + 学习者记忆装配 (PreparedContext V1)</h2>
-        <div class="controls">
-          <input id="query-input" type="text" value="SeekDB Delta HNSW 与 PowerContext 字节预算证据筛选如何协同？" />
-          <select id="weak-topic-select" onchange="runBrief()">
-            <option value="hybrid_rag">薄弱知识点记忆：hybrid_rag (RRF 混合检索)</option>
-            <option value="vector_index">薄弱知识点记忆：vector_index (VSAG 双层 HNSW)</option>
-            <option value="context_engineering">薄弱知识点记忆：context_engineering (字节预算装配)</option>
-          </select>
-          <button id="btn-run" onclick="runBrief()">生成精读简报与闪卡</button>
-        </div>
-        <pre id="brief-output"></pre>
+    <main class="workspace">
+      <div class="stack">
+        <section class="card">
+          <div class="card-head">
+            <h2 class="card-title"><span class="idx">01</span>混合检索与智能装配</h2>
+            <div class="view-tabs" id="card01-tabs">
+              <button type="button" class="view-tab is-active" id="tab-synthesis-btn">AI 综合综述</button>
+              <button type="button" class="view-tab" id="tab-envelope-btn">信封代码</button>
+            </div>
+            <span class="card-note" id="source-note">PreparedContext V1</span>
+          </div>
+          <div class="card-body">
+            <div class="controls">
+              <div class="field field-full">
+                <label class="field-label" for="query-input">研究问题</label>
+                <textarea id="query-input" rows="2" spellcheck="false" placeholder="输入研究问题，例如：混合检索中的 RRF 融合与字节预算装配如何协同？"></textarea>
+              </div>
+              <div class="controls-row">
+                <div class="field field-auto">
+                  <span class="field-label">薄弱知识点</span>
+                  <div class="select" id="topic-select">
+                    <button type="button" class="select-trigger" id="topic-trigger" aria-haspopup="listbox" aria-expanded="false">
+                      <span class="select-value" id="topic-value">—</span>
+                      <svg class="select-chevron" width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <path d="m4 6 4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                    <div class="select-menu" id="topic-menu" role="listbox" aria-label="薄弱知识点"></div>
+                  </div>
+                </div>
+                <div class="field field-auto">
+                  <span class="field-label">字节预算</span>
+                  <input class="text-input" id="budget-input" type="number" min="400" max="8000" step="100" style="width:110px" />
+                </div>
+                <div class="field field-auto field-end">
+                  <button type="button" class="btn btn-primary" id="btn-run">生成简报与闪卡</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="memory-strip" id="memory-strip"></div>
+
+            <div class="synthesis-wrap" id="synthesis-wrap">
+              <div class="synthesis-summary-card">
+                <div class="synthesis-badge">
+                  <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0Zm.93 11.588-3.21-3.21a.75.75 0 0 1 1.06-1.06l2.15 2.15 4.67-4.67a.75.75 0 1 1 1.06 1.06l-5.73 5.73Z"/></svg>
+                  AI 综合学术结论
+                </div>
+                <div class="synthesis-text" id="synthesis-summary-text">输入研究问题并点击「生成简报与闪卡」以生成跨文献深度综述与权衡对比。</div>
+              </div>
+              <div class="subhead" style="margin:12px 0 6px"><span>文献论点与论据链</span><span id="synthesis-count"></span></div>
+              <div class="synthesis-paragraphs" id="synthesis-paragraphs-box"></div>
+              <div class="subhead" style="margin:12px 0 6px"><span>关键架构指标权衡 (Trade-Offs)</span></div>
+              <div class="rows" id="synthesis-tradeoffs-box"></div>
+              <div class="subhead" style="margin:12px 0 6px"><span>开放研究课题 (Open Questions)</span></div>
+              <div class="open-questions" id="synthesis-questions-box"></div>
+            </div>
+
+            <div class="panel" id="envelope-panel" style="display:none">
+              <div class="panel-head">
+                <span class="panel-title">PreparedContext V1</span>
+                <div class="panel-actions">
+                  <span class="panel-meta" id="envelope-bytes">—</span>
+                  <button type="button" class="btn btn-ghost btn-sm" id="btn-copy">复制</button>
+                </div>
+              </div>
+              <div class="panel-body" id="brief-output"></div>
+            </div>
+
+            <div class="subhead"><span>MemoryCitation</span><span id="citations-count"></span></div>
+            <div class="rows" id="citations-box"></div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <h2 class="card-title"><span class="idx">03</span>文献库</h2>
+            <span class="card-note" id="corpus-count"></span>
+          </div>
+          <div class="card-body">
+            <div class="controls" style="margin-bottom:12px">
+              <div class="field">
+                <input class="text-input" id="corpus-filter" type="text" placeholder="按标题或章节过滤文献…" />
+              </div>
+              <div class="field field-auto field-end">
+                <button type="button" class="btn btn-ghost btn-sm" id="btn-clear-scope">清除聚焦</button>
+              </div>
+            </div>
+            <div class="rows" id="papers-box"></div>
+          </div>
+        </section>
       </div>
 
-      <div class="card">
-        <h2>2. 自适应间隔复习闪卡 (按 PowerContext 薄弱记忆动态置顶)</h2>
-        <div id="flashcards-box"></div>
-      </div>
-    </div>
+      <div class="stack">
+        <section class="card">
+          <div class="card-head">
+            <h2 class="card-title"><span class="idx">02</span>自适应间隔复习闪卡</h2>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <button type="button" class="btn btn-ghost btn-sm" id="btn-export-anki" title="导出为 Anki 格式制表符文本">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 10.5v1.75A1.75 1.75 0 0 0 4.25 14h7.5A1.75 1.75 0 0 0 13.5 12.25V10.5M8 3v8m0 0 3-3m-3 3-3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                导出 Anki (.tsv)
+              </button>
+              <span class="card-note" id="cards-note">按薄弱点置顶</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="controls" style="margin-bottom:14px">
+              <div class="field">
+                <label class="field-label" for="note-input">复习备注（随学习者画像持久化）</label>
+                <input class="text-input" id="note-input" type="text" placeholder="例如：重点攻克 RRF 倒数排名融合公式" />
+              </div>
+              <div class="field field-auto field-end">
+                <button type="button" class="btn btn-ghost" id="btn-note">保存</button>
+              </div>
+            </div>
+            <div id="flashcards-box"></div>
+          </div>
+        </section>
 
-    <div class="section-grid-3">
-      <div class="card">
-        <div class="stat-num">120 min → 18 min</div>
-        <p style="font-size: 13px; color: var(--muted);">单次跨 4 篇系统论文整理核心论据与原文引用耗时缩短 85%</p>
+        <section class="card">
+          <div class="card-head">
+            <h2 class="card-title"><span class="idx">04</span>概念图谱与学术关联</h2>
+            <div class="view-tabs" id="card04-tabs">
+              <button type="button" class="view-tab is-active" id="tab-graph-btn">拓扑图谱</button>
+              <button type="button" class="view-tab" id="tab-edges-btn">边集列表</button>
+            </div>
+            <span class="card-note" id="edges-count"></span>
+          </div>
+          <div class="card-body">
+            <div id="graph-view">
+              <div class="graph-container" id="concept-graph-container">
+                <svg class="graph-svg" id="concept-graph-svg"></svg>
+                <div class="graph-tooltip" id="graph-tooltip"></div>
+              </div>
+            </div>
+            <div id="edges-view" style="display:none">
+              <div class="rows" id="edges-box"></div>
+            </div>
+          </div>
+        </section>
       </div>
-      <div class="card">
-        <div class="stat-num">91.4% 记忆留存率</div>
-        <p style="font-size: 13px; color: var(--muted);">基于 PowerContext 薄弱知识点置顶复习后，7 天后概念回忆准确率由 54.0% 提升至 91.4%</p>
-      </div>
-      <div class="card">
-        <div class="stat-num">100% 字节预算守恒</div>
-        <p style="font-size: 13px; color: var(--muted);">所有精读简报严格控制在 max_bytes UTF-8 预算内，附带精确字符区间 [start:end] 引用</p>
-      </div>
-    </div>
+    </main>
 
-    <footer>
-      2026 OceanBase AI 数据库大赛 · Qoder 赛题交付作品 | 验证行：OB-P:xI1C-CXPJXT4ztVpZDY6_A
+    <footer class="footer">
+      <span>2026 OceanBase AI 数据库大赛 · Qoder 赛题交付作品</span>
+      <span>验证行 <code>OB-P:xI1C-CXPJXT4ztVpZDY6_A</code></span>
     </footer>
   </div>
 
-  <script>
-    const STATIC_CORPUS = [
-      {
-        doc_id: "PAPER-VSAG-01",
-        topic: "vector_index",
-        key_takeaway: "双层 HNSW（Delta + Snapshot）兼顾毫秒级实时写入可见性与高吞吐近似最近邻（ANN）检索。",
-        content: "SeekDB integrates the VSAG library to maintain a two-tier HNSW architecture...",
-        question: "SeekDB 如何同时保障新增向量的实时可查性与大规模图索引的查询吞吐？",
-        answer: "采用 Delta HNSW 承接实时增量写入，并通过后台异步 Compaction 合并至只读优化的 Snapshot HNSW。"
-      },
-      {
-        doc_id: "PAPER-PC-02",
-        topic: "context_engineering",
-        key_takeaway: "在严格 UTF-8 字节预算内定位原文高相关子区间 [start:end] 并附带可回查的 MemoryCitation。",
-        content: "Given a query and a strict max_bytes UTF-8 budget, PowerContext ranks active atomic memories...",
-        question: "PowerContext 在上下文窗口受限时如何避免整段长记忆截断导致的证据丢失？",
-        answer: "开启 evidence_selection=True，围绕查询词提取精确字符区间 [start:end] 并封装为带 MemoryCitation 的 PreparedContext V1 信封。"
-      },
-      {
-        doc_id: "PAPER-RRF-03",
-        topic: "hybrid_rag",
-        key_takeaway: "RRF（k=60）利用倒数排名平滑融合 BM25 词法匹配与 HNSW 向量距离，消除异构分值量纲差异。",
-        content: "Combining BM25 full-text scores with cosine distance requires rank-based normalization...",
-        question: "为什么在混合检索中常使用 RRF（倒数排名融合）而非直接将 BM25 分数与余弦相似度线性相加？",
-        answer: "BM25 无上界且受词频分布影响大，而余弦相似度位于 [-1,1]，RRF 基于次序融合（1/(k+rank)）无需分值归一化即可稳定校准。"
-      },
-      {
-        doc_id: "PAPER-DELTA-04",
-        topic: "context_engineering",
-        key_takeaway: "利用 ContextPackDelta 复用多轮会话的公共前缀分块，仅传输增量分块并通过 SHA-256 校验完整性。",
-        content: "Across multi-turn research sessions, ContextPackDelta.between(base_pack, target_pack)...",
-        question: "多轮 Agent 协作中如何降低重复发送长上下文包的网络与序列化开销？",
-        answer: "使用 ContextPackDelta.between(base, target) 复用公共前缀分块 ID，仅传输新增后缀分块并校验重建后的 SHA-256 摘要。"
-      }
+  <!-- 导入论文抽屉 -->
+  <div class="scrim" id="import-scrim"></div>
+  <aside class="drawer" id="import-drawer" role="dialog" aria-modal="true" aria-label="导入论文">
+    <div class="drawer-head">
+      <div>
+        <div class="drawer-title">导入论文</div>
+        <div class="drawer-sub">按标题层级自动切分为可检索章节，逐章生成闪卡后写入文献库</div>
+      </div>
+      <button type="button" class="icon-btn" id="btn-import-close" aria-label="关闭">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="m4 4 8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="drawer-body">
+      <div class="preset-row">
+        <span class="preset-title">💡 经典文献预设（一键填入并解析）：</span>
+        <div class="preset-chips">
+          <button type="button" class="preset-chip" data-preset="oceanbase">《OceanBase 分布式架构》</button>
+          <button type="button" class="preset-chip" data-preset="spanner">《Google Spanner TrueTime》</button>
+          <button type="button" class="preset-chip" data-preset="flashattention">《FlashAttention SRAM 计算》</button>
+          <button type="button" class="preset-chip" data-preset="hnsw">《HNSW 分层跳表图索引》</button>
+          <button type="button" class="preset-chip" data-preset="powercontext">《PowerContext 确定性上下文》</button>
+        </div>
+      </div>
+      <div class="dropzone" id="dropzone">
+        <div><strong>点击选择文件</strong> 或拖拽到此处</div>
+        <div style="margin-top:4px">支持 .md / .txt / .text，Markdown 标题（# / ##）会被识别为章节</div>
+        <input type="file" id="file-input" accept=".md,.txt,.text,text/markdown,text/plain" hidden />
+      </div>
+      <div class="field">
+        <label class="field-label" for="import-text">或直接粘贴论文正文</label>
+        <textarea id="import-text" rows="7" spellcheck="false" placeholder="# 论文标题&#10;&#10;## 第一章节&#10;正文段落…"></textarea>
+      </div>
+      <div class="controls-row">
+        <div class="field field-auto">
+          <span class="field-label">归类主题</span>
+          <div class="select" id="import-topic-select">
+            <button type="button" class="select-trigger" id="import-topic-trigger" aria-haspopup="listbox" aria-expanded="false">
+              <span class="select-value" id="import-topic-value">—</span>
+              <svg class="select-chevron" width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="m4 6 4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <div class="select-menu" id="import-topic-menu" role="listbox" aria-label="归类主题"></div>
+          </div>
+        </div>
+        <div class="field field-auto field-end">
+          <button type="button" class="btn btn-ghost" id="btn-parse">解析为章节</button>
+        </div>
+      </div>
+      <div id="parsed-box"></div>
+    </div>
+    <div class="drawer-foot">
+      <span class="card-note" id="import-hint"></span>
+      <button type="button" class="btn btn-ghost" id="btn-import-cancel">取消</button>
+      <button type="button" class="btn btn-primary" id="btn-import-save" disabled>导入</button>
+    </div>
+  </aside>
+
+  <!-- 复习会话 -->
+  <div class="session" id="review-session" role="dialog" aria-modal="true" aria-label="复习会话">
+    <div class="session-card">
+      <div class="session-head">
+        <span class="card-title" id="session-title">间隔复习</span>
+        <div class="session-progress"><span id="session-progress"></span></div>
+        <span class="card-note" id="session-counter">0 / 0</span>
+        <button type="button" class="icon-btn" id="btn-review-close" aria-label="关闭">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="session-body" id="session-body"></div>
+      <div class="session-foot" id="session-foot"></div>
+    </div>
+  </div>
+
+  <!-- 文献全篇精读弹窗 -->
+  <div class="modal" id="paper-reader" role="dialog" aria-modal="true" aria-label="文献精读">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <div class="eyebrow" id="reader-topic">—</div>
+          <h2 class="card-title" id="reader-title" style="margin-top:2px">文献精读</h2>
+          <div class="card-note" id="reader-section" style="text-align:left; margin-top:4px">—</div>
+        </div>
+        <button type="button" class="icon-btn" id="btn-reader-close" aria-label="关闭">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="synthesis-summary-card">
+          <div class="synthesis-badge">核心提炼 (Key Takeaway)</div>
+          <div class="synthesis-text" id="reader-takeaway">—</div>
+        </div>
+        <div class="subhead"><span>原文内容与证据切片</span><span id="reader-doc-id" style="font-family:var(--font-mono)"></span></div>
+        <div style="font-size:var(--step-0); line-height:1.8; color:var(--text); background:var(--bg); border:1px solid var(--border); border-radius:var(--r-md); padding:16px;" id="reader-content"></div>
+        <div class="subhead"><span>配套自适应闪卡</span></div>
+        <div class="flashcard" style="margin:0" id="reader-card-box">
+          <h3 class="flashcard-q" id="reader-q">—</h3>
+          <p class="flashcard-a"><b style="color:var(--accent)">A</b><span id="reader-a">—</span></p>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" id="btn-reader-scope">以该文献聚焦检索</button>
+        <button type="button" class="btn btn-primary" id="btn-reader-dismiss">完成阅读</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toasts" id="toasts"></div>
+
+  <script type="module">
+    import {
+      applyReview,
+      bm25Scores,
+      buildBrief,
+      corpusTopics,
+      embeddingForDocument,
+      fuseChannels,
+      generateResearchSynthesis,
+      groupByPaper,
+      mergeMemory,
+      parsePaper,
+      scholarEmbedding,
+    } from './engine.js';
+
+    const API_BASE = '/functions/v1/app/api/scholar';
+    const PROFILE_KEY = 'scholarpulse.profile.v1';
+    const LEARNER_KEY = 'scholarpulse.learner.v1';
+    const IMPORT_KEY = 'scholarpulse.imports.v1';
+    const GRADES = [
+      { grade: 0, label: '忘记', hint: '1 天后重来' },
+      { grade: 3, label: '困难', hint: '短间隔' },
+      { grade: 4, label: '良好', hint: '正常推进' },
+      { grade: 5, label: '掌握', hint: '拉长间隔' },
     ];
 
-    function renderStaticFallback(q, weakTopic) {
-      const sorted = [...STATIC_CORPUS].sort((a, b) => (a.topic === weakTopic ? -1 : b.topic === weakTopic ? 1 : 0));
-      const spans = sorted.slice(0, 3).map(item =>
-        `- [${item.doc_id}] ${item.key_takeaway} | ${item.content} (citation=${item.doc_id}[0:150])`
-      ).join("\n");
-      const env = [
-        "BEGIN_POWERCONTEXT_PREPARED_CONTEXT_V1",
-        "scope_id: scope:qoder:scholar-pulse",
-        `research_question: ${q}`,
-        `learner_memory: id=default-scholar weak_topics=${weakTopic}`,
-        "evidence_spans:",
-        spans,
-        "END_POWERCONTEXT_PREPARED_CONTEXT_V1"
-      ].join("\n");
-      document.getElementById('brief-output').textContent = env;
-      const box = document.getElementById('flashcards-box');
-      box.innerHTML = sorted.map((fc, i) => {
-        const isWeak = fc.topic === weakTopic;
-        return `
-          <div class="flashcard ${isWeak ? 'weak' : ''}">
-            <div class="flashcard-q">
-              Q${i+1} [${fc.doc_id} | ${fc.topic}]
-              ${isWeak ? '<span class="priority-tag">PowerContext 薄弱点置顶</span>' : ''}
-              <div style="margin-top:4px;">${fc.question}</div>
-            </div>
-            <div class="flashcard-a">A: ${fc.answer}</div>
-          </div>
-        `;
-      }).join('');
+    /* ---------------- 存储与状态 ---------------- */
+    const readStore = (key, fallback) => {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch { return fallback; }
+    };
+    const writeStore = (key, value) => {
+      try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* 隐私模式下降级为会话内状态 */ }
+    };
+    const emptyProfile = () => ({ weak_topics: [], mastered_doc_ids: [], preferred_depth: 'deep-derivation', review_note: '', cards: {} });
+    const mergeProfiles = (a, b) => {
+      const left = a || emptyProfile();
+      const right = b || emptyProfile();
+      return {
+        weak_topics: [...new Set([...(left.weak_topics || []), ...(right.weak_topics || [])])],
+        mastered_doc_ids: [...new Set([...(left.mastered_doc_ids || []), ...(right.mastered_doc_ids || [])])],
+        preferred_depth: right.preferred_depth || left.preferred_depth || 'deep-derivation',
+        review_note: right.review_note || left.review_note || '',
+        cards: { ...(left.cards || {}), ...(right.cards || {}) },
+      };
+    };
+
+    const learnerId = (() => {
+      let id = readStore(LEARNER_KEY, null);
+      if (!id) {
+        id = 'scholar-visitor-' + Math.random().toString(36).slice(2, 10);
+        writeStore(LEARNER_KEY, id);
+      }
+      return id;
+    })();
+
+    const state = {
+      profile: mergeProfiles(emptyProfile(), readStore(PROFILE_KEY, emptyProfile())),
+      documents: [],
+      papers: [],
+      topics: [],
+      scopeDocIds: null,
+      scopeLabel: null,
+      brief: null,
+      backend: 'local',
+      parsed: [],
+      session: { queue: [], index: 0, revealed: false, reviewed: 0 },
+    };
+
+    /* ---------------- 网络 ---------------- */
+    const apiGet = async (path) => {
+      const resp = await fetch(API_BASE + path, { headers: { 'Accept': 'application/json' } });
+      if (!resp.ok) throw new Error('http_' + resp.status);
+      return resp.json();
+    };
+    const apiPost = async (path, payload) => {
+      const resp = await fetch(API_BASE + path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!resp.ok) throw new Error('http_' + resp.status);
+      return resp.json();
+    };
+
+    /* ---------------- 提示条 ---------------- */
+    const toastHost = document.getElementById('toasts');
+    function toast(message, tone = 'info') {
+      const node = document.createElement('div');
+      node.className = 'toast';
+      node.dataset.tone = tone;
+      node.textContent = message;
+      toastHost.appendChild(node);
+      setTimeout(() => {
+        node.classList.add('is-out');
+        setTimeout(() => node.remove(), 240);
+      }, 3600);
     }
 
-    async function runBrief() {
-      const q = document.getElementById('query-input').value.trim();
-      const weakTopic = document.getElementById('weak-topic-select').value;
-      if (!q) return;
+    /* ---------------- 数字动画 ---------------- */
+    function countUp(node, target, { suffix = '', prefix = '' } = {}) {
+      const to = Number(target || 0);
+      const format = (value) => `${prefix}${value}${suffix}`;
+      const hasPrevious = node.dataset.value !== undefined;
+      const from = hasPrevious ? Number(node.dataset.value) : 0;
+      node.dataset.value = String(to);
+      if (from === to) {
+        node.textContent = format(to);
+        return;
+      }
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        node.textContent = format(to);
+        return;
+      }
+      node.textContent = format(from);
+      const duration = 480;
+      const start = performance.now();
+      let raf = 0;
+      // 后台标签页会节流 rAF，因此用定时器兜底，保证最终数值一定写入。
+      const timer = setTimeout(() => { node.textContent = format(to); }, duration + 80);
+      const tick = (now) => {
+        const t = Math.min(1, (now - start) / duration);
+        const eased = 1 - Math.pow(1 - t, 3);
+        node.textContent = format(Math.round(from + (to - from) * eased));
+        if (t < 1) raf = requestAnimationFrame(tick);
+        else clearTimeout(timer);
+      };
+      raf = requestAnimationFrame(tick);
+    }
+
+    /* ---------------- 语料加载 ---------------- */
+    async function loadCorpus() {
       try {
-        await fetch('/api/scholar/memory', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            learner_id: 'default-scholar',
-            weak_topics: [weakTopic],
-            mastered_doc_ids: [],
-            preferred_depth: 'deep-derivation',
-            review_note: '优先强化 ' + weakTopic
-          })
-        });
-        const resp = await fetch('/api/scholar/brief', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ research_question: q, max_bytes: 1600, learner_id: 'default-scholar' })
-        });
-        if (!resp.ok) throw new Error('fallback');
-        const data = await resp.json();
-        document.getElementById('brief-output').textContent = data.prepared_context;
-        const box = document.getElementById('flashcards-box');
-        box.innerHTML = data.flashcards.map((fc, i) => {
-          const isWeak = fc.priority === 'high_weak_topic';
-          return `
-            <div class="flashcard ${isWeak ? 'weak' : ''}">
-              <div class="flashcard-q">
-                Q${i+1} [${fc.doc_id} | ${fc.topic}]
-                ${isWeak ? '<span class="priority-tag">PowerContext 薄弱点置顶</span>' : ''}
-                <div style="margin-top:4px;">${fc.question}</div>
-              </div>
-              <div class="flashcard-a">A: ${fc.answer}</div>
-            </div>
-          `;
+        const data = await apiGet('/corpus');
+        state.backend = 'server';
+        state.documents = data.documents ?? [];
+        state.papers = data.papers ?? [];
+        state.topics = data.topics ?? [];
+        return;
+      } catch { /* 无服务端语料时使用本地语料 */ }
+
+      state.backend = 'local';
+      const seed = await fetch('./corpus.json').then(r => r.json());
+      const imports = readStore(IMPORT_KEY, []);
+      const documents = [...(seed.documents ?? []), ...imports];
+      state.documents = documents;
+      state.papers = groupByPaper(documents);
+      state.topics = corpusTopics(documents);
+    }
+
+    const localDocumentsWithEmbeddings = () => state.documents.map(doc => ({
+      doc_id: doc.doc_id,
+      paper_title: doc.paper_title,
+      section: doc.section,
+      topic: doc.topic,
+      content: doc.content,
+      key_takeaway: doc.key_takeaway,
+      flashcard: doc.flashcard ?? {},
+      embedding: scholarEmbedding(embeddingForDocument(doc)),
+    }));
+
+    /* ---------------- 渲染 ---------------- */
+    const escapeHtml = (value) => String(value ?? '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    const highlightEnvelope = (text) => escapeHtml(text)
+      .replace(/^(BEGIN_POWERCONTEXT_PREPARED_CONTEXT_V1|END_POWERCONTEXT_PREPARED_CONTEXT_V1)$/gm, '<span class="t-marker">$1</span>')
+      .replace(/^([a-z_]+)(: )(.+)$/gm, '<span class="t-key">$1</span><span class="t-value">$2$3</span>')
+      .replace(/\[(\d+):(\d+)\]/g, '<span class="t-span">[$1:$2]</span>');
+
+    const setStatus = (text, tone) => {
+      document.getElementById('backend-text').textContent = text;
+      const pill = document.getElementById('backend-badge');
+      pill.dataset.tone = tone || 'server';
+      pill.dataset.busy = '0';
+    };
+    const setBusy = (text) => {
+      document.getElementById('backend-text').textContent = text;
+      const pill = document.getElementById('backend-badge');
+      pill.dataset.busy = '1';
+      pill.dataset.tone = 'server';
+    };
+
+    const updateDueBadge = () => {
+      const now = Math.floor(Date.now() / 1000);
+      const due = Object.values(state.profile.cards || {}).filter(card => card?.due_at && card.due_at <= now).length;
+      const badge = document.getElementById('due-badge');
+      badge.hidden = due === 0;
+      badge.textContent = String(due);
+    };
+
+    const renderMemoryStrip = () => {
+      const box = document.getElementById('memory-strip');
+      const weak = state.profile.weak_topics.map(t => `<span class="chip chip-weak">${escapeHtml(t)}</span>`).join('');
+      const mastered = state.profile.mastered_doc_ids.map(t => `<span class="chip chip-mastered">${escapeHtml(t)}</span>`).join('');
+      const scope = state.scopeLabel ? `<span class="chip chip-accent">聚焦：${escapeHtml(state.scopeLabel)}</span>` : '';
+      const note = state.profile.review_note ? `<span class="memory-note">“${escapeHtml(state.profile.review_note)}”</span>` : '';
+      box.innerHTML =
+        `<span class="memory-key">学习者画像</span>` +
+        `<span class="chip">${escapeHtml(learnerId)}</span>` +
+        (weak ? `<span class="memory-key">薄弱</span>${weak}` : `<span class="memory-empty">暂无薄弱点</span>`) +
+        (mastered ? `<span class="memory-key">已掌握</span>${mastered}` : '') + scope + note;
+    };
+
+    const renderMetrics = (data) => {
+      const retrieval = data.retrieval || {};
+      const pinned = (data.flashcards || []).filter(c => c.priority === 'high_weak_topic').length;
+      const total = (data.flashcards || []).length;
+      const bytes = data.prepared_context_bytes ?? 0;
+      const max = data.max_bytes || 1;
+
+      const retrievalNode = document.getElementById('m-retrieval');
+      retrievalNode.innerHTML = `<span id="m-retrieval-num">0</span><em>/<span id="m-retrieval-fts">0</span></em>`;
+      countUp(document.getElementById('m-retrieval-num'), retrieval.vector_hits ?? 0);
+      countUp(document.getElementById('m-retrieval-fts'), retrieval.fts_hits ?? 0);
+      document.getElementById('m-retrieval-sub').textContent =
+        `向量 / 全文 命中 · RRF k=${retrieval.rrf_k ?? '—'}`;
+
+      const citationNode = document.getElementById('m-citations');
+      citationNode.textContent = '';
+      countUp(citationNode, (data.citations || []).length);
+      document.getElementById('m-citations-sub').textContent = '证据区间数量';
+
+      const budgetNode = document.getElementById('m-budget');
+      budgetNode.innerHTML = '<span id="m-budget-num">0</span><em>%</em>';
+      countUp(document.getElementById('m-budget-num'), Math.round((bytes / max) * 100));
+      document.getElementById('m-budget-sub').textContent = `${bytes} / ${max} B`;
+
+      const queueNode = document.getElementById('m-flashcards');
+      queueNode.innerHTML = '<span id="m-queue-pinned">0</span><em>/<span id="m-queue-total">0</span></em>';
+      countUp(document.getElementById('m-queue-pinned'), pinned);
+      countUp(document.getElementById('m-queue-total'), total);
+      document.getElementById('m-flashcards-sub').textContent = '薄弱点置顶 / 总数';
+
+      const due = data.review_due ?? 0;
+      const badge = document.getElementById('due-badge');
+      badge.hidden = due === 0;
+      badge.textContent = String(due);
+      updateDueBadge();
+    };
+
+    const renderSynthesis = (synthesis, citations = []) => {
+      if (!synthesis) return;
+      const summaryText = document.getElementById('synthesis-summary-text');
+      summaryText.textContent = synthesis.summary || '未检索到有效学术结论。';
+
+      const countNode = document.getElementById('synthesis-count');
+      const paragraphs = synthesis.analysis_paragraphs || [];
+      countNode.textContent = paragraphs.length ? `${paragraphs.length} 篇支撑文献` : '';
+
+      const parasBox = document.getElementById('synthesis-paragraphs-box');
+      if (!paragraphs.length) {
+        parasBox.innerHTML = '<div class="empty">暂无综合分析段落</div>';
+      } else {
+        parasBox.innerHTML = paragraphs.map(p => {
+          const rendered = escapeHtml(p)
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\[([A-Z0-9_\-]+):§([^\]]+)\]/g, (match, docId, sec) => {
+              const cleanSec = sec.replace(/&amp;/g, '&');
+              return `<button type="button" class="cite-badge" data-reader-doc="${escapeHtml(docId)}" title="查看原文与证据区间">${escapeHtml(docId)}:§${escapeHtml(cleanSec)}</button>`;
+            });
+          return `<div class="synthesis-para">${rendered}</div>`;
         }).join('');
-      } catch (e) {
-        renderStaticFallback(q, weakTopic);
+      }
+
+      const tradeoffsBox = document.getElementById('synthesis-tradeoffs-box');
+      const tradeoffs = synthesis.trade_offs || [];
+      if (!tradeoffs.length) {
+        tradeoffsBox.innerHTML = '<div class="empty">未识别到明显的架构技术权衡</div>';
+      } else {
+        tradeoffsBox.innerHTML = tradeoffs.map(t => {
+          const parts = t.split('：');
+          if (parts.length > 1) {
+            return `<div class="tradeoff-card"><strong>⚖️ ${escapeHtml(parts[0])}</strong>：${escapeHtml(parts.slice(1).join('：'))}</div>`;
+          }
+          return `<div class="tradeoff-card"><strong>⚖️ 关键权衡</strong>：${escapeHtml(t)}</div>`;
+        }).join('');
+      }
+
+      const questionsBox = document.getElementById('synthesis-questions-box');
+      const questions = synthesis.open_questions || [];
+      if (!questions.length) {
+        questionsBox.innerHTML = '<div class="empty">暂无开放研究课题</div>';
+      } else {
+        questionsBox.innerHTML = questions.map(q => `<div class="open-q-item">${escapeHtml(q)}</div>`).join('');
+      }
+    };
+
+    const renderCitations = (citations) => {
+      const box = document.getElementById('citations-box');
+      document.getElementById('citations-count').textContent = citations.length ? `${citations.length} 条` : '';
+      if (!citations.length) {
+        box.innerHTML = '<div class="empty">本次检索未产出可回查的证据区间</div>';
+        return;
+      }
+      box.className = 'rows stagger';
+      box.innerHTML = citations.map(c => `
+        <div class="row" data-reader-doc="${escapeHtml(c.source_id)}" style="cursor:pointer;" title="点击阅读文献全文与证据区间">
+          <code>${escapeHtml(c.source_id)}[${c.start}:${c.end}]</code>
+          <div class="row-main">
+            <div class="row-title">${escapeHtml(c.paper_title)}</div>
+            <div class="row-sub">${escapeHtml(c.section)}</div>
+          </div>
+          <span class="row-action" style="font-size:11px; color:var(--accent);">精读 &rarr;</span>
+        </div>`).join('');
+    };
+
+    const renderFlashcards = (cards) => {
+      const box = document.getElementById('flashcards-box');
+      document.getElementById('cards-note').textContent = `${cards.length} 张`;
+      if (!cards.length) {
+        box.innerHTML = '<div class="empty">本次召回未生成可复习的闪卡</div>';
+        return;
+      }
+      box.className = 'stagger';
+      box.innerHTML = cards.map((fc, i) => {
+        const tags = [`<span class="tag tag-plain">${escapeHtml(fc.topic)}</span>`];
+        if (fc.priority === 'high_weak_topic') tags.push('<span class="tag tag-weak">薄弱点置顶</span>');
+        if (fc.priority === 'low_mastered') tags.push('<span class="tag tag-mastered">已掌握 · 后置</span>');
+        if (fc.due) tags.push('<span class="tag tag-due">今日到期</span>');
+        if (fc.next_review_days) tags.push(`<span class="tag tag-review">${fc.next_review_days} 天后复习</span>`);
+        return `
+          <div class="flashcard-3d-wrap" data-priority="${escapeHtml(fc.priority)}" data-due="${fc.due ? 'true' : 'false'}" data-card-idx="${i}">
+            <div class="flashcard-inner">
+              <div class="flashcard-front">
+                <div class="flashcard-meta">
+                  <span class="flashcard-id">Q${i + 1} · ${escapeHtml(fc.doc_id)}</span>
+                  ${tags.join('')}
+                  <button type="button" class="flashcard-flip-btn" data-action="flip">
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M14 8A6 6 0 1 1 8 2M14 2v6h-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    翻转看答案
+                  </button>
+                </div>
+                <h3 class="flashcard-q">${escapeHtml(fc.question)}</h3>
+                <div class="flashcard-foot">
+                  <button type="button" class="btn btn-ghost btn-sm" data-review-doc="${escapeHtml(fc.doc_id)}">立即复习</button>
+                  <button type="button" class="btn btn-ghost btn-sm" data-reader-doc="${escapeHtml(fc.doc_id)}">查阅论文</button>
+                  ${fc.reviewed ? `<span class="tag tag-plain">已复习 ${fc.reps} 次</span>` : ''}
+                </div>
+              </div>
+              <div class="flashcard-back">
+                <div>
+                  <div class="flashcard-meta">
+                    <span class="flashcard-id">A${i + 1} 答案解析 · ${escapeHtml(fc.doc_id)}</span>
+                    <button type="button" class="flashcard-flip-btn" data-action="flip">
+                      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 8a6 6 0 1 1 6 6M2 14V8h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      翻回问题
+                    </button>
+                  </div>
+                  <p class="flashcard-a" style="margin-top:6px"><b>A</b>${escapeHtml(fc.answer)}</p>
+                </div>
+                <div class="flashcard-foot" style="margin-top:10px; border-top:1px solid var(--border-soft); padding-top:8px">
+                  <span style="font-size:11.5px; color:var(--text-3); align-self:center">SM-2 评分：</span>
+                  <button type="button" class="btn btn-sm grade-btn" data-grade="0" data-doc="${escapeHtml(fc.doc_id)}">忘记</button>
+                  <button type="button" class="btn btn-sm grade-btn" data-grade="3" data-doc="${escapeHtml(fc.doc_id)}">困难</button>
+                  <button type="button" class="btn btn-sm grade-btn" data-grade="4" data-doc="${escapeHtml(fc.doc_id)}">良好</button>
+                  <button type="button" class="btn btn-sm grade-btn" data-grade="5" data-doc="${escapeHtml(fc.doc_id)}">掌握</button>
+                </div>
+              </div>
+            </div>
+          </div>`;
+      }).join('');
+    };
+
+    const renderEdges = (edges) => {
+      const box = document.getElementById('edges-box');
+      document.getElementById('edges-count').textContent = edges.length ? `${edges.length} 条` : '';
+      if (!edges.length) {
+        box.innerHTML = '<div class="empty">本次召回的段落之间没有共享同一研究主题的边</div>';
+        return;
+      }
+      box.className = 'rows stagger';
+      box.innerHTML = edges.map(e => `
+        <div class="row">
+          <code>${escapeHtml(e.from)} → ${escapeHtml(e.to)}</code>
+          <div class="row-main"><div class="row-sub">${escapeHtml(e.relation)}</div></div>
+        </div>`).join('');
+    };
+
+    function renderConceptGraph(documents, edges) {
+      const svg = document.getElementById('concept-graph-svg');
+      const container = document.getElementById('concept-graph-container');
+      const tooltip = document.getElementById('graph-tooltip');
+      const width = container.clientWidth || 460;
+      const height = 270;
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+      if (!documents || !documents.length) {
+        svg.innerHTML = `<text x="${width/2}" y="${height/2}" fill="#64748b" text-anchor="middle" font-size="12">暂无概念图谱节点</text>`;
+        return;
+      }
+
+      const nodeDocs = documents.slice(0, 10);
+      const docCount = nodeDocs.length;
+      const centerX = width / 2;
+      const centerY = height / 2;
+      const radius = Math.min(width, height) * 0.36;
+
+      const topicColors = {
+        distributed_database: '#38bdf8',
+        vector_index: '#10b981',
+        vector_retrieval: '#10b981',
+        llm_reasoning: '#a855f7',
+        rag_context: '#f59e0b',
+        context_engineering: '#f59e0b',
+        hybrid_rag: '#f59e0b',
+        memory_cognition: '#ec4899',
+        agent_workflow: '#06b6d4',
+      };
+
+      const nodes = nodeDocs.map((d, i) => {
+        const angle = (2 * Math.PI * i) / docCount - Math.PI / 2;
+        return {
+          id: d.doc_id,
+          title: d.paper_title,
+          section: d.section,
+          topic: d.topic,
+          takeaway: d.key_takeaway,
+          color: topicColors[d.topic] || '#4cc2ff',
+          x: centerX + radius * Math.cos(angle),
+          y: centerY + radius * Math.sin(angle),
+        };
+      });
+
+      const nodeMap = new Map(nodes.map(n => [n.id, n]));
+
+      let linesSvg = '';
+      for (const e of edges || []) {
+        const source = nodeMap.get(e.from);
+        const target = nodeMap.get(e.to);
+        if (source && target) {
+          linesSvg += `<line class="graph-link" x1="${source.x}" y1="${source.y}" x2="${target.x}" y2="${target.y}" data-from="${source.id}" data-to="${target.id}"></line>`;
+        }
+      }
+
+      let nodesSvg = '';
+      for (const n of nodes) {
+        const shortId = n.id.replace(/^PAPER-/, '');
+        nodesSvg += `
+          <g class="graph-node" data-node-id="${escapeHtml(n.id)}" transform="translate(${n.x}, ${n.y})">
+            <circle class="graph-node-circle" r="15" fill="var(--surface-2)" stroke="${n.color}"></circle>
+            <circle r="5" fill="${n.color}" opacity="0.85"></circle>
+            <text class="graph-node-text" dy="26">${escapeHtml(shortId)}</text>
+          </g>`;
+      }
+
+      svg.innerHTML = `${linesSvg}${nodesSvg}`;
+
+      svg.querySelectorAll('.graph-node').forEach(nodeElem => {
+        const id = nodeElem.dataset.nodeId;
+        const n = nodeMap.get(id);
+        if (!n) return;
+
+        nodeElem.addEventListener('mouseenter', () => {
+          tooltip.innerHTML = `<strong>${escapeHtml(n.title)}</strong><div style="font-size:11px;color:${n.color};margin:2px 0;">${escapeHtml(n.topic)} · ${escapeHtml(n.section)}</div><div style="font-size:11px;color:var(--text-2);">${escapeHtml(n.takeaway)}</div>`;
+          tooltip.classList.add('is-visible');
+          tooltip.style.left = `${Math.min(width - 240, Math.max(10, n.x - 100))}px`;
+          tooltip.style.top = `${n.y < height / 2 ? n.y + 24 : n.y - 75}px`;
+
+          svg.querySelectorAll(`.graph-link[data-from="${id}"], .graph-link[data-to="${id}"]`).forEach(l => l.classList.add('is-active'));
+        });
+
+        nodeElem.addEventListener('mouseleave', () => {
+          tooltip.classList.remove('is-visible');
+          svg.querySelectorAll('.graph-link').forEach(l => l.classList.remove('is-active'));
+        });
+
+        nodeElem.addEventListener('click', () => {
+          openPaperReader(id);
+        });
+      });
+    }
+
+    const renderPapers = () => {
+      const box = document.getElementById('papers-box');
+      const filter = document.getElementById('corpus-filter').value.trim().toLowerCase();
+      const papers = state.papers.filter(paper => {
+        if (!filter) return true;
+        if (paper.paper_title.toLowerCase().includes(filter)) return true;
+        return paper.sections.some(s => (s.section || '').toLowerCase().includes(filter));
+      });
+      const sectionCount = state.papers.reduce((sum, p) => sum + p.section_count, 0);
+      document.getElementById('corpus-count').textContent = `${state.papers.length} 篇 · ${sectionCount} 章`;
+      if (!papers.length) {
+        box.innerHTML = '<div class="empty">没有匹配的文献</div>';
+        return;
+      }
+      box.className = 'rows stagger';
+      box.innerHTML = papers.map(paper => {
+        const scoped = state.scopeDocIds && paper.doc_ids.every(id => state.scopeDocIds.includes(id));
+        const topics = paper.topics.map(t => `<span class="chip">${escapeHtml(t)}</span>`).join('');
+        return `
+          <button type="button" class="paper${scoped ? ' is-scoped' : ''}" data-paper="${escapeHtml(paper.paper_title)}">
+            <div class="row-main">
+              <div class="paper-title">${escapeHtml(paper.paper_title)}</div>
+              <div class="paper-meta">${topics}</div>
+              <div class="paper-sections">${paper.section_count} 个章节 · ${paper.sections.slice(0, 2).map(s => escapeHtml(s.section)).join(' / ')}${paper.section_count > 2 ? ' …' : ''}</div>
+            </div>
+          </button>`;
+      }).join('');
+    };
+
+    /* ---------------- 下拉组件 ---------------- */
+    function createSelect({ rootId, triggerId, valueId, menuId, onSelect }) {
+      const root = document.getElementById(rootId);
+      const trigger = document.getElementById(triggerId);
+      const valueNode = document.getElementById(valueId);
+      const menu = document.getElementById(menuId);
+      let options = [];
+      let current = null;
+
+      const render = () => {
+        valueNode.textContent = current ?? '—';
+        menu.innerHTML = options.map(option => `
+          <button type="button" class="select-option${option.value === current ? ' is-active' : ''}"
+                  role="option" aria-selected="${option.value === current}" data-value="${escapeHtml(option.value)}">
+            <span class="opt-name">${escapeHtml(option.label)}</span>
+            <span class="opt-meta">${escapeHtml(option.meta ?? '')}</span>
+          </button>`).join('');
+      };
+      const setOpen = (open) => {
+        root.dataset.open = open ? 'true' : 'false';
+        trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+      };
+      trigger.addEventListener('click', () => setOpen(root.dataset.open !== 'true'));
+      menu.addEventListener('click', (event) => {
+        const option = event.target.closest('[data-value]');
+        if (!option) return;
+        current = option.dataset.value;
+        render();
+        setOpen(false);
+        onSelect?.(current);
+      });
+      document.addEventListener('click', (event) => {
+        if (!root.contains(event.target)) setOpen(false);
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') setOpen(false);
+      });
+
+      return {
+        setOptions(next, selected) {
+          options = next;
+          current = selected ?? (options[0]?.value ?? null);
+          render();
+        },
+        get value() { return current; },
+      };
+    }
+
+    const topicSelect = createSelect({
+      rootId: 'topic-select', triggerId: 'topic-trigger', valueId: 'topic-value', menuId: 'topic-menu',
+      onSelect: () => { state.selectedTopic = topicSelect.value; runBrief(); },
+    });
+    const importTopicSelect = createSelect({
+      rootId: 'import-topic-select', triggerId: 'import-topic-trigger', valueId: 'import-topic-value', menuId: 'import-topic-menu',
+    });
+
+    /* ---------------- 检索 ---------------- */
+    const queryInput = document.getElementById('query-input');
+    queryInput.addEventListener('input', () => {
+      queryInput.style.height = 'auto';
+      queryInput.style.height = Math.min(queryInput.scrollHeight, 180) + 'px';
+    });
+
+    const budgetInput = document.getElementById('budget-input');
+    budgetInput.addEventListener('change', () => {
+      const value = Math.min(8000, Math.max(400, Number(budgetInput.value) || 400));
+      budgetInput.value = String(value);
+      writeStore('scholarpulse.budget.v1', value);
+    });
+
+    const persistProfile = async () => {
+      writeStore(PROFILE_KEY, state.profile);
+      if (state.backend !== 'server') return;
+      try {
+        await apiPost('/memory', {
+          learner_id: learnerId,
+          weak_topics: state.profile.weak_topics,
+          mastered_doc_ids: state.profile.mastered_doc_ids,
+          preferred_depth: state.profile.preferred_depth,
+          review_note: state.profile.review_note,
+          cards: state.profile.cards,
+        });
+      } catch { /* 记忆仍保留在本机 */ }
+    };
+
+    const runLocalBrief = (question, maxBytes) => {
+      const documents = localDocumentsWithEmbeddings();
+      const hits = fuseChannels(documents, scholarEmbedding(question), bm25Scores(question, documents), 4, state.scopeDocIds);
+      const merged = mergeMemory(state.profile, null);
+      const brief = buildBrief({
+        researchQuestion: question,
+        maxBytes,
+        learnerId,
+        profile: merged,
+        hits,
+        cardState: merged.cards,
+        nowSeconds: Math.floor(Date.now() / 1000),
+      });
+      return {
+        ...brief,
+        hits,
+        synthesis: brief.synthesis || generateResearchSynthesis(question, hits, brief.citations),
+        reused_learner_memory: merged,
+        memory_source: 'local',
+      };
+    };
+
+    async function runBrief() {
+      const question = queryInput.value.trim();
+      if (!question) {
+        toast('请先输入研究问题', 'warn');
+        queryInput.focus();
+        return;
+      }
+      const maxBytes = Math.min(8000, Math.max(400, Number(budgetInput.value) || 1600));
+      budgetInput.value = String(maxBytes);
+
+      const button = document.getElementById('btn-run');
+      button.disabled = true;
+      setBusy('正在检索…');
+      document.getElementById('envelope-panel').classList.add('is-scanning');
+
+      if (topicSelect.value) {
+        state.profile = mergeProfiles(state.profile, { weak_topics: [topicSelect.value] });
+        renderMemoryStrip();
+        await persistProfile();
+      }
+
+      let data;
+      try {
+        data = await apiPost('/brief', {
+          research_question: question,
+          max_bytes: maxBytes,
+          learner_id: learnerId,
+          scope_doc_ids: state.scopeDocIds,
+          memory: {
+            weak_topics: state.profile.weak_topics,
+            mastered_doc_ids: state.profile.mastered_doc_ids,
+            preferred_depth: state.profile.preferred_depth,
+            review_note: state.profile.review_note,
+            cards: state.profile.cards,
+          },
+        });
+        state.backend = 'server';
+      } catch {
+        data = runLocalBrief(question, maxBytes);
+        state.backend = 'local';
+      }
+
+      state.brief = data;
+      state.profile = mergeProfiles(state.profile, data.reused_learner_memory ?? null);
+      writeStore(PROFILE_KEY, state.profile);
+
+      document.getElementById('brief-output').innerHTML = highlightEnvelope(data.prepared_context);
+      document.getElementById('envelope-bytes').textContent = `${data.prepared_context_bytes} B`;
+      document.getElementById('source-note').textContent = state.backend === 'server' ? '服务端计算' : '浏览器本地计算';
+      document.getElementById('envelope-panel').classList.remove('is-scanning');
+      renderMetrics(data);
+      renderSynthesis(data.synthesis || generateResearchSynthesis(question, data.hits || state.documents.slice(0, 4), data.citations || []), data.citations || []);
+      renderCitations(data.citations || []);
+      renderFlashcards(data.flashcards || []);
+      renderEdges(data.concept_graph_edges || []);
+      renderConceptGraph(state.documents, data.concept_graph_edges || []);
+      renderMemoryStrip();
+      setStatus(
+        `${state.backend === 'server' ? '服务端检索' : '浏览器本地计算'} · ${(data.flashcards || []).length} 张闪卡`,
+        state.backend === 'server' ? 'server' : 'local',
+      );
+      button.disabled = false;
+    }
+
+    /* ---------------- 文献库交互 ---------------- */
+    document.getElementById('papers-box').addEventListener('click', (event) => {
+      const button = event.target.closest('[data-paper]');
+      if (!button) return;
+      const paper = state.papers.find(p => p.paper_title === button.dataset.paper);
+      if (!paper) return;
+      const isSame = state.scopeDocIds && state.scopeDocIds.length === paper.doc_ids.length
+        && paper.doc_ids.every(id => state.scopeDocIds.includes(id));
+      state.scopeDocIds = isSame ? null : paper.doc_ids;
+      state.scopeLabel = isSame ? null : paper.paper_title;
+      renderPapers();
+      renderMemoryStrip();
+      toast(isSame ? '已取消检索聚焦' : `已聚焦到《${paper.paper_title}》`, 'ok');
+      if (!isSame && queryInput.value.trim()) runBrief();
+    });
+
+    document.getElementById('btn-clear-scope').addEventListener('click', () => {
+      state.scopeDocIds = null;
+      state.scopeLabel = null;
+      renderPapers();
+      renderMemoryStrip();
+      if (queryInput.value.trim()) runBrief();
+    });
+
+    document.getElementById('corpus-filter').addEventListener('input', renderPapers);
+
+    /* ---------------- 导入抽屉 ---------------- */
+    const importDrawer = document.getElementById('import-drawer');
+    const importScrim = document.getElementById('import-scrim');
+    const setDrawerOpen = (open) => {
+      importDrawer.dataset.open = open ? 'true' : 'false';
+      importScrim.dataset.open = open ? 'true' : 'false';
+      document.body.classList.toggle('is-locked', open);
+      if (open) document.getElementById('import-text').focus();
+    };
+    document.getElementById('btn-import').addEventListener('click', () => setDrawerOpen(true));
+    document.getElementById('btn-import-close').addEventListener('click', () => setDrawerOpen(false));
+    document.getElementById('btn-import-cancel').addEventListener('click', () => setDrawerOpen(false));
+    importScrim.addEventListener('click', () => setDrawerOpen(false));
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') setDrawerOpen(false);
+    });
+
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('file-input');
+    const importText = document.getElementById('import-text');
+    dropzone.addEventListener('click', () => fileInput.click());
+    dropzone.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      dropzone.classList.add('is-over');
+    });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('is-over'));
+    dropzone.addEventListener('drop', (event) => {
+      event.preventDefault();
+      dropzone.classList.remove('is-over');
+      const file = event.dataTransfer?.files?.[0];
+      if (file) readFile(file);
+    });
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files?.[0];
+      if (file) readFile(file);
+    });
+    async function readFile(file) {
+      const text = await file.text();
+      importText.value = text;
+      toast(`已载入 ${file.name}`, 'ok');
+      parseImport();
+    }
+
+    document.getElementById('btn-parse').addEventListener('click', parseImport);
+    function parseImport() {
+      const text = importText.value.trim();
+      if (!text) {
+        toast('请粘贴论文正文或选择文件', 'warn');
+        return;
+      }
+      const topic = importTopicSelect.value ?? state.topics[0]?.topic ?? 'context_engineering';
+      const sections = parsePaper(text, { topic });
+      if (!sections.length) {
+        toast('未能从文本中切分出章节', 'warn');
+        return;
+      }
+      const stamp = Date.now().toString(36).toUpperCase();
+      state.parsed = sections.map((section, index) => ({
+        doc_id: `IMPORT-${stamp}-${String(index + 1).padStart(2, '0')}`,
+        paper_title: section.paper_title,
+        section: section.section,
+        topic: section.topic,
+        content: section.content,
+        key_takeaway: section.key_takeaway,
+        flashcard: section.flashcard,
+      }));
+      renderParsed();
+    }
+
+    function renderParsed() {
+      const box = document.getElementById('parsed-box');
+      const saveBtn = document.getElementById('btn-import-save');
+      document.getElementById('import-hint').textContent = state.parsed.length ? `解析出 ${state.parsed.length} 个章节` : '';
+      saveBtn.disabled = state.parsed.length === 0;
+      if (!state.parsed.length) {
+        box.innerHTML = '<div class="empty">解析后的章节会显示在这里，可逐条编辑后再导入</div>';
+        return;
+      }
+      box.className = 'rows stagger';
+      box.innerHTML = state.parsed.map((section, index) => `
+        <div class="parsed-row" data-index="${index}">
+          <div class="parsed-head">
+            <span class="parsed-idx">${index + 1}</span>
+            <input class="text-input" data-field="section" value="${escapeHtml(section.section)}" placeholder="章节名" />
+          </div>
+          <div class="parsed-grid">
+            <input class="text-input span-2" data-field="key_takeaway" value="${escapeHtml(section.key_takeaway)}" placeholder="一句话结论" />
+            <input class="text-input span-2" data-field="question" value="${escapeHtml(section.flashcard.question)}" placeholder="闪卡问题" />
+            <input class="text-input span-2" data-field="answer" value="${escapeHtml(section.flashcard.answer)}" placeholder="闪卡答案" />
+          </div>
+        </div>`).join('');
+    }
+
+    document.getElementById('parsed-box').addEventListener('input', (event) => {
+      const field = event.target.dataset.field;
+      if (!field) return;
+      const row = event.target.closest('[data-index]');
+      const section = state.parsed[Number(row.dataset.index)];
+      if (!section) return;
+      if (field === 'section') section.section = event.target.value;
+      else if (field === 'key_takeaway') section.key_takeaway = event.target.value;
+      else if (field === 'question') section.flashcard.question = event.target.value;
+      else if (field === 'answer') section.flashcard.answer = event.target.value;
+    });
+
+    document.getElementById('btn-import-save').addEventListener('click', async () => {
+      if (!state.parsed.length) return;
+      const button = document.getElementById('btn-import-save');
+      const batch = state.parsed;
+      button.disabled = true;
+      try {
+        if (state.backend === 'server') {
+          await apiPost('/ingest/batch', { documents: batch });
+        } else {
+          const imports = readStore(IMPORT_KEY, []);
+          writeStore(IMPORT_KEY, [...imports, ...batch]);
+        }
+        await loadCorpus();
+        renderPapers();
+        toast(`已导入 ${batch.length} 个章节`, 'ok');
+        state.parsed = [];
+        renderParsed();
+        importText.value = '';
+        setDrawerOpen(false);
+        queryInput.value = batch[0]?.section ?? queryInput.value;
+      } catch (error) {
+        toast('导入失败：' + (error?.message ?? '未知错误'), 'err');
+      } finally {
+        button.disabled = state.parsed.length === 0;
+      }
+    });
+
+    /* ---------------- 复习会话 ---------------- */
+    const sessionRoot = document.getElementById('review-session');
+    const setSessionOpen = (open) => {
+      sessionRoot.dataset.open = open ? 'true' : 'false';
+      document.body.classList.toggle('is-locked', open);
+    };
+    document.getElementById('btn-review-close').addEventListener('click', () => setSessionOpen(false));
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') setSessionOpen(false);
+    });
+
+    function startSession(cards) {
+      const queue = cards ?? state.brief?.flashcards ?? [];
+      if (!queue.length) {
+        toast('当前没有可复习的闪卡，请先生成简报', 'warn');
+        return;
+      }
+      state.session = { queue, index: 0, revealed: false, reviewed: 0, grades: {} };
+      renderSession();
+      setSessionOpen(true);
+    }
+
+    function renderSession() {
+      const { queue, index, revealed } = state.session;
+      const body = document.getElementById('session-body');
+      const foot = document.getElementById('session-foot');
+      document.getElementById('session-counter').textContent = `${Math.min(index + 1, queue.length)} / ${queue.length}`;
+      document.getElementById('session-progress').style.width = `${(index / queue.length) * 100}%`;
+
+      if (index >= queue.length) {
+        const graded = Object.entries(state.session.grades);
+        const passed = graded.filter(([, grade]) => grade >= 3).length;
+        body.innerHTML = `
+          <div class="session-summary">
+            <div class="big">${passed}/${graded.length || queue.length}</div>
+            <p>本轮复习完成，掌握 ${passed} 张，需重学 ${(graded.length || queue.length) - passed} 张</p>
+          </div>`;
+        foot.innerHTML = '<button type="button" class="btn btn-primary" data-session-action="close">完成</button>';
+        return;
+      }
+
+      const card = queue[index];
+      body.innerHTML = `
+        <div class="session-meta">
+          <span class="tag tag-plain">${escapeHtml(card.topic)}</span>
+          <span class="tag tag-review">${card.next_review_days} 天后复习</span>
+          ${card.reps ? `<span class="tag tag-plain">已复习 ${card.reps} 次</span>` : ''}
+        </div>
+        <div class="session-q">${escapeHtml(card.question)}</div>
+        ${revealed ? `<div class="session-answer"><b>A</b> ${escapeHtml(card.answer)}</div>` : ''}`;
+      if (revealed) {
+        foot.innerHTML = GRADES.map(g => `
+          <button type="button" class="btn btn-ghost grade-btn" data-grade="${g.grade}" title="${escapeHtml(g.hint)}">${escapeHtml(g.label)}</button>`).join('');
+      } else {
+        foot.innerHTML = '<button type="button" class="btn btn-primary" data-session-action="reveal" style="width:100%">显示答案</button>';
       }
     }
 
-    window.addEventListener('DOMContentLoaded', runBrief);
+    document.getElementById('session-foot').addEventListener('click', async (event) => {
+      const action = event.target.dataset.sessionAction;
+      if (action === 'reveal') {
+        state.session.revealed = true;
+        renderSession();
+        return;
+      }
+      if (action === 'close') {
+        setSessionOpen(false);
+        await runBrief();
+        return;
+      }
+      const grade = event.target.dataset.grade;
+      if (grade === undefined) return;
+      const card = state.session.queue[state.session.index];
+      const now = Math.floor(Date.now() / 1000);
+      state.profile = mergeProfiles(state.profile, { cards: applyReview(state.profile.cards, card.doc_id, Number(grade), now) });
+      state.session.grades[card.doc_id] = Number(grade);
+      state.session.reviewed += 1;
+      state.session.revealed = false;
+      state.session.index += 1;
+      if (state.backend === 'server') {
+        try {
+          await apiPost('/review', { learner_id: learnerId, doc_id: card.doc_id, grade: Number(grade) });
+        } catch { /* 本地已记录 */ }
+      }
+      await persistProfile();
+      updateDueBadge();
+      renderSession();
+    });
+
+    document.getElementById('btn-review').addEventListener('click', () => startSession());
+    document.getElementById('flashcards-box').addEventListener('click', async (event) => {
+      const flipBtn = event.target.closest('[data-action="flip"]');
+      if (flipBtn) {
+        const wrap = flipBtn.closest('.flashcard-3d-wrap');
+        if (wrap) wrap.classList.toggle('is-flipped');
+        return;
+      }
+      const readerBtn = event.target.closest('[data-reader-doc]');
+      if (readerBtn) {
+        openPaperReader(readerBtn.dataset.readerDoc);
+        return;
+      }
+      const reviewBtn = event.target.closest('[data-review-doc]');
+      if (reviewBtn) {
+        const docId = reviewBtn.dataset.reviewDoc;
+        const card = (state.brief?.flashcards ?? []).find(item => item.doc_id === docId);
+        if (card) startSession([card]);
+        return;
+      }
+      const gradeBtn = event.target.closest('.grade-btn[data-grade]');
+      if (gradeBtn) {
+        const docId = gradeBtn.dataset.doc;
+        const grade = Number(gradeBtn.dataset.grade);
+        const now = Math.floor(Date.now() / 1000);
+        state.profile = mergeProfiles(state.profile, { cards: applyReview(state.profile.cards, docId, grade, now) });
+        if (state.backend === 'server') {
+          try {
+            await apiPost('/review', { learner_id: learnerId, doc_id: docId, grade });
+          } catch { /* 本地记录 */ }
+        }
+        await persistProfile();
+        updateDueBadge();
+        toast(`已记录评分（${GRADES.find(g => g.grade === grade)?.label || grade}），已自动更新 SM-2 复习间隔`, 'ok');
+        await runBrief();
+      }
+    });
+
+    /* ---------------- 标签页切换 ---------------- */
+    const tabSynthesisBtn = document.getElementById('tab-synthesis-btn');
+    const tabEnvelopeBtn = document.getElementById('tab-envelope-btn');
+    const synthesisWrap = document.getElementById('synthesis-wrap');
+    const envelopePanel = document.getElementById('envelope-panel');
+    tabSynthesisBtn.addEventListener('click', () => {
+      tabSynthesisBtn.classList.add('is-active');
+      tabEnvelopeBtn.classList.remove('is-active');
+      synthesisWrap.style.display = 'flex';
+      envelopePanel.style.display = 'none';
+    });
+    tabEnvelopeBtn.addEventListener('click', () => {
+      tabEnvelopeBtn.classList.add('is-active');
+      tabSynthesisBtn.classList.remove('is-active');
+      synthesisWrap.style.display = 'none';
+      envelopePanel.style.display = 'block';
+    });
+
+    const tabGraphBtn = document.getElementById('tab-graph-btn');
+    const tabEdgesBtn = document.getElementById('tab-edges-btn');
+    const graphView = document.getElementById('graph-view');
+    const edgesView = document.getElementById('edges-view');
+    tabGraphBtn.addEventListener('click', () => {
+      tabGraphBtn.classList.add('is-active');
+      tabEdgesBtn.classList.remove('is-active');
+      graphView.style.display = 'block';
+      edgesView.style.display = 'none';
+    });
+    tabEdgesBtn.addEventListener('click', () => {
+      tabEdgesBtn.classList.add('is-active');
+      tabGraphBtn.classList.remove('is-active');
+      graphView.style.display = 'none';
+      edgesView.style.display = 'block';
+    });
+
+    /* ---------------- Anki 导出 ---------------- */
+    function exportAnkiTsv() {
+      const cards = state.brief?.flashcards || [];
+      if (!cards.length) {
+        toast('当前没有可导出的闪卡，请先生成简报', 'warn');
+        return;
+      }
+      const lines = cards.map(c => {
+        const q = (c.question || '').replace(/\t|\r?\n/g, ' ');
+        const a = (c.answer || '').replace(/\t|\r?\n/g, ' ');
+        const tag = `${c.topic || ''} ${c.priority || ''}`.trim();
+        const id = c.doc_id || '';
+        return `${q}\t${a}\t${tag}\t${id}`;
+      });
+      const tsvContent = '#separator:tab\n#html:false\n#tags column:3\n' + lines.join('\n');
+      const blob = new Blob([tsvContent], { type: 'text/tab-separated-values;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `scholarpulse-flashcards-${Date.now()}.tsv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast(`已成功导出 ${cards.length} 张 Anki 闪卡 (.tsv)`, 'ok');
+    }
+    document.getElementById('btn-export-anki').addEventListener('click', exportAnkiTsv);
+
+    /* ---------------- 文献精读弹窗 ---------------- */
+    function openPaperReader(docId) {
+      const doc = (state.documents || []).find(d => d.doc_id === docId);
+      if (!doc) return;
+      document.getElementById('reader-title').textContent = doc.paper_title || '文献精读';
+      document.getElementById('reader-topic').textContent = doc.topic || '学术文献';
+      document.getElementById('reader-section').textContent = doc.section || '';
+      document.getElementById('reader-doc-id').textContent = doc.doc_id;
+      document.getElementById('reader-takeaway').textContent = doc.key_takeaway || '';
+
+      let contentHtml = escapeHtml(doc.content || '');
+      const citation = (state.brief?.citations || []).find(c => c.source_id === docId);
+      if (citation && citation.end > citation.start) {
+        const raw = doc.content || '';
+        const start = citation.start;
+        const end = Math.min(citation.end, raw.length);
+        const prefix = escapeHtml(raw.slice(0, start));
+        const highlighted = escapeHtml(raw.slice(start, end));
+        const suffix = escapeHtml(raw.slice(end));
+        contentHtml = `${prefix}<mark class="highlight-span">${highlighted}</mark>${suffix}`;
+      }
+      document.getElementById('reader-content').innerHTML = contentHtml;
+
+      const card = doc.flashcard || {};
+      document.getElementById('reader-q').textContent = card.question || `${doc.paper_title} 说明了什么？`;
+      document.getElementById('reader-a').textContent = card.answer || doc.key_takeaway || '';
+
+      const modal = document.getElementById('paper-reader');
+      modal.dataset.open = 'true';
+      state.activeReaderDocId = docId;
+    }
+
+    const readerModal = document.getElementById('paper-reader');
+    document.getElementById('btn-reader-close').addEventListener('click', () => { readerModal.dataset.open = 'false'; });
+    document.getElementById('btn-reader-dismiss').addEventListener('click', () => { readerModal.dataset.open = 'false'; });
+    document.getElementById('btn-reader-scope').addEventListener('click', () => {
+      readerModal.dataset.open = 'false';
+      if (!state.activeReaderDocId) return;
+      state.scopeDocIds = [state.activeReaderDocId];
+      const doc = state.documents.find(d => d.doc_id === state.activeReaderDocId);
+      state.scopeLabel = doc?.paper_title || state.activeReaderDocId;
+      renderPapers();
+      renderMemoryStrip();
+      toast(`已聚焦检索至《${state.scopeLabel}》`, 'ok');
+      if (queryInput.value.trim()) runBrief();
+    });
+
+    /* ---------------- 经典文献预设 ---------------- */
+    const LANDMARK_PRESETS = {
+      oceanbase: {
+        topic: "distributed_database",
+        text: "# OceanBase: A Distributed Shared-Nothing Multitenant Database\n\n## Section 2.1: Partition-Level Multi-Paxos\nOceanBase achieves high availability by partitioning tables into independent Multi-Paxos groups. Master leases decouple partition leadership from global consensus.\n\n## Section 4.3: LSM-Tree Storage Engine with Daily Major Compaction\nAll modifications land in memory MemTable first. Daily Major Compaction merges baseline data at off-peak hours to avoid daytime interference."
+      },
+      spanner: {
+        topic: "distributed_database",
+        text: "# Spanner: Google's Globally-Distributed Database\n\n## Section 3.1: TrueTime API and Uncertainty Windows\nTrueTime exposes guaranteed uncertainty bounds [earliest, latest] (< 7ms) across global GPS and atomic clocks.\n\n## Section 4.2: Commit Wait and External Consistency\nTransactions enforce commit wait (waiting 2*epsilon) before releasing locks, establishing linearizable timestamps worldwide."
+      },
+      flashattention: {
+        topic: "llm_reasoning",
+        text: "# FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness\n\n## Section 2.2: GPU SRAM Tiling Architecture\nFlashAttention tiles Q, K, V blocks into on-chip SRAM, computing online softmax to eliminate O(N^2) HBM memory traffic.\n\n## Section 3.1: Backward Pass Gradient Recomputation\nIn the backward pass, attention matrices are recomputed from SRAM blocks instead of loaded from slow HBM."
+      },
+      hnsw: {
+        topic: "vector_retrieval",
+        text: "# Efficient and Robust Approximate Nearest Neighbor Search Using Hierarchical Graphs\n\n## Section 3.1: Multi-Layer Skip-List Graph Hierarchy\nHNSW organizes vector points into multiple layers of small-world graphs. Sparse top layers provide fast routing while dense bottom layers guarantee high recall."
+      },
+      powercontext: {
+        topic: "context_engineering",
+        text: "# PowerContext: Deterministic Evidence Selection under Strict Byte Budgets\n\n## Section 4.1: UTF-8 Byte-Bounded PreparedContext Assembly\nPowerContext ranks atomic memories and selects exact character spans [start:end] to build strict UTF-8 bounded envelopes with MemoryCitation.\n\n## Section 5.3: ContextPackDelta Incremental Handoff\nIdentifies shared prefix chunk IDs across multi-turn sessions, cutting network bandwidth by over 78%."
+      }
+    };
+
+    document.querySelector('.preset-chips').addEventListener('click', (event) => {
+      const chip = event.target.closest('[data-preset]');
+      if (!chip) return;
+      const presetKey = chip.dataset.preset;
+      const preset = LANDMARK_PRESETS[presetKey];
+      if (!preset) return;
+      importText.value = preset.text;
+      importTopicSelect.setOptions(
+        [...state.topics.map(t => ({ value: t.topic, label: t.topic, meta: `${t.count} 章` })),
+         { value: 'custom', label: 'custom', meta: '自定义' }],
+        preset.topic
+      );
+      toast(`已填入预设《${chip.textContent.replace(/[《》]/g, '')}》`, 'ok');
+      parseImport();
+    });
+
+    /* ---------------- 综述与引用跳转 ---------------- */
+    document.getElementById('synthesis-paragraphs-box').addEventListener('click', (event) => {
+      const citeBtn = event.target.closest('[data-reader-doc]');
+      if (citeBtn) openPaperReader(citeBtn.dataset.readerDoc);
+    });
+
+    document.getElementById('citations-box').addEventListener('click', (event) => {
+      const row = event.target.closest('[data-reader-doc]');
+      if (row) openPaperReader(row.dataset.readerDoc);
+    });
+
+    /* ---------------- 键盘快捷键（复习模式与翻卡） ---------------- */
+    document.addEventListener('keydown', async (event) => {
+      if (sessionRoot.dataset.open !== 'true') return;
+      if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') return;
+
+      if (event.code === 'Space') {
+        event.preventDefault();
+        state.session.revealed = !state.session.revealed;
+        renderSession();
+        return;
+      }
+      if (state.session.revealed && ['1', '2', '3', '4'].includes(event.key)) {
+        const gradeMap = { '1': 0, '2': 3, '3': 4, '4': 5 };
+        const grade = gradeMap[event.key];
+        const card = state.session.queue[state.session.index];
+        if (!card) return;
+        const now = Math.floor(Date.now() / 1000);
+        state.profile = mergeProfiles(state.profile, { cards: applyReview(state.profile.cards, card.doc_id, grade, now) });
+        state.session.grades[card.doc_id] = grade;
+        state.session.reviewed += 1;
+        state.session.revealed = false;
+        state.session.index += 1;
+        if (state.backend === 'server') {
+          try {
+            await apiPost('/review', { learner_id: learnerId, doc_id: card.doc_id, grade });
+          } catch { /* 本地已记录 */ }
+        }
+        await persistProfile();
+        updateDueBadge();
+        renderSession();
+      }
+    });
+
+    /* ---------------- 其他控件 ---------------- */
+    document.getElementById('btn-run').addEventListener('click', runBrief);
+    document.getElementById('btn-note').addEventListener('click', async () => {
+      state.profile = mergeProfiles(state.profile, { review_note: document.getElementById('note-input').value.trim() });
+      renderMemoryStrip();
+      await persistProfile();
+      toast('复习备注已保存', 'ok');
+      await runBrief();
+    });
+    document.getElementById('btn-copy').addEventListener('click', async (event) => {
+      const button = event.currentTarget;
+      try {
+        await navigator.clipboard.writeText(document.getElementById('brief-output').textContent);
+        button.textContent = '已复制';
+      } catch {
+        button.textContent = '复制失败';
+      }
+      setTimeout(() => { button.textContent = '复制'; }, 1600);
+    });
+
+    /* ---------------- 启动 ---------------- */
+    async function start() {
+      renderPapers();
+      renderParsed();
+      setBusy('正在连接语料…');
+      await loadCorpus();
+
+      state.topics = state.topics.length ? state.topics : corpusTopics(state.documents);
+      renderPapers();
+      topicSelect.setOptions(
+        state.topics.map(t => ({ value: t.topic, label: t.topic, meta: `${t.count} 章` })),
+        state.profile.weak_topics[state.profile.weak_topics.length - 1] ?? state.topics[0]?.topic,
+      );
+      state.selectedTopic = topicSelect.value;
+      importTopicSelect.setOptions(
+        [...state.topics.map(t => ({ value: t.topic, label: t.topic, meta: `${t.count} 章` })),
+         { value: 'custom', label: 'custom', meta: '自定义' }],
+        state.topics[0]?.topic,
+      );
+      budgetInput.value = String(readStore('scholarpulse.budget.v1', 1600));
+
+      try {
+        const stored = await apiGet('/memory/' + encodeURIComponent(learnerId));
+        state.profile = mergeProfiles(stored, state.profile);
+        writeStore(PROFILE_KEY, state.profile);
+      } catch { /* 无服务端画像时使用本机记忆 */ }
+
+      renderMemoryStrip();
+      const seedQuestion = state.documents[0]?.key_takeaway;
+      if (seedQuestion) queryInput.value = seedQuestion;
+      await runBrief();
+    }
+
+    window.addEventListener('DOMContentLoaded', start);
   </script>
 </body>
 </html>

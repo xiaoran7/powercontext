@@ -1,0 +1,237 @@
+{
+  "version": 2,
+  "description": "ScholarPulse 计算机系统与前沿人工智能经典文献库 (涵盖分布式数据库、高维向量检索、大模型注意力机制、RAG 与上下文工程、认知记忆算法五大领域)",
+  "domains": [
+    { "id": "distributed_database", "name": "分布式数据库与共识", "color": "#38bdf8" },
+    { "id": "vector_retrieval", "name": "高维向量检索与混合索引", "color": "#10b981" },
+    { "id": "llm_reasoning", "name": "大模型架构与计算优化", "color": "#a855f7" },
+    { "id": "rag_context", "name": "RAG 与确定性上下文工程", "color": "#f59e0b" },
+    { "id": "memory_cognition", "name": "间隔复习与认知记忆模型", "color": "#ec4899" }
+  ],
+  "documents": [
+    {
+      "doc_id": "PAPER-OB-01",
+      "paper_title": "OceanBase: A Distributed Shared-Nothing Multitenant Database",
+      "section": "Section 2.1: Partition-Level Paxos & Multi-Paxos Lease Replication",
+      "topic": "distributed_database",
+      "content": "OceanBase achieves high availability and horizontal scalability by partitioning tables and organizing each partition replica as an independent Multi-Paxos group. By decoupling master leases from cluster-wide consensus, partitions can elect leaders autonomously in milliseconds without incurring cross-partition coordination overhead during failover.",
+      "key_takeaway": "分区级 Multi-Paxos 实现高可用自主选举，将租约解耦至单分区级别，消除全局共识瓶颈。",
+      "flashcard": {
+        "question": "OceanBase 如何在万级分区规模下保证故障时的高可用与毫秒级选主？",
+        "answer": "通过将每个分区副本组织为独立的 Multi-Paxos 复制组，并将主副本租约解耦至分区级，各分区在节点故障时并行自主选主，无需全局锁与跨分区协调。",
+        "interval_days": 2,
+        "ease": 2.6
+      }
+    },
+    {
+      "doc_id": "PAPER-OB-02",
+      "paper_title": "OceanBase: A Distributed Shared-Nothing Multitenant Database",
+      "section": "Section 4.3: LSM-Tree Architecture with Frozen MemTable & Daily Compaction",
+      "topic": "distributed_database",
+      "content": "OceanBase adopts an LSM-Tree storage engine where writes are buffered in memory (MemTable). When memory limits are reached, the active MemTable is frozen and flushed as an immutable minor SSTable. Daily Major Compaction merges static baseline data with incremental updates during off-peak hours, maximizing compression ratios while avoiding daytime read-write interference.",
+      "key_takeaway": "内存写缓冲结合冻结 MemTable 与低峰期每日合并（Major Compaction），兼顾实时写入吞吐与高压缩比。",
+      "flashcard": {
+        "question": "OceanBase 的 LSM-Tree 存储引擎如何避免传统数据库中写放大与日间读写互相干扰？",
+        "answer": "白日写操作全部写入内存 MemTable，超阈值时转为不可变 Frozen MemTable 异步刷盘；将消耗 I/O 的基准大合并（Major Compaction）移至夜间业务低峰期执行。",
+        "interval_days": 1,
+        "ease": 2.5
+      }
+    },
+    {
+      "doc_id": "PAPER-SPANNER-03",
+      "paper_title": "Spanner: Google's Globally-Distributed Database",
+      "section": "Section 3.1: TrueTime API Uncertainty Window [earliest, latest]",
+      "topic": "distributed_database",
+      "content": "Google Spanner guarantees strict external consistency (linearizability) across global datacenters via TrueTime. The TrueTime API exposes time as an interval [t.earliest, t.latest] with guaranteed bounded uncertainty epsilon (< 7ms). By enforcing commit wait (waiting out 2*epsilon before releasing commit locks), Spanner guarantees that causality matches commit timestamps globally.",
+      "key_takeaway": "TrueTime 将时间不确定性约束在 [earliest, latest] 区间内，通过 commit wait 达成全球外部强一致性。",
+      "flashcard": {
+        "question": "Spanner 的 TrueTime API 如何通过 Commit Wait 机制实现跨数据中心的线性一致性（外部一致性）？",
+        "answer": "写入事务分配的时间戳 s 必须大于等于当前 t.latest，且必须在释放锁前等待直到 t.now().earliest > s（等待时间大于 2*epsilon），确保后续事务观察到的时间戳严格单调递增。",
+        "interval_days": 3,
+        "ease": 2.7
+      }
+    },
+    {
+      "doc_id": "PAPER-RAFT-04",
+      "paper_title": "In Search of an Understandable Consensus Algorithm (Raft)",
+      "section": "Section 5.4: Safety Invariants & Election Restriction by Log Completeness",
+      "topic": "distributed_database",
+      "content": "Raft ensures state machine safety by restricting which candidates can win elections. A voter denies its vote if the candidate's log is less up-to-date than its own. By comparing the last log entry's term and index, Raft guarantees that any elected leader already contains all committed entries from all previous terms, avoiding log overwrite.",
+      "key_takeaway": "候选人选票裁定必须通过日志完整性检查（比对最后一条日志的任期与索引），保证当选 Leader 必定持有全部已提交日志。",
+      "flashcard": {
+        "question": "Raft 算法如何仅靠投票机制（Election Restriction）确保不会发生已提交日志的覆盖与丢失？",
+        "answer": "投票节点比较自身与候选人的最后日志条目：若候选人最后日志任期较小，或任期相同但索引较短，则拒绝投票；由于已提交日志必定存在于多数派节点中，新 Leader 必定持有全部已提交日志。",
+        "interval_days": 2,
+        "ease": 2.5
+      }
+    },
+    {
+      "doc_id": "PAPER-VSAG-01",
+      "paper_title": "OceanBase SeekDB: Single-Stage Hybrid Vector and Full-Text Retrieval Engine",
+      "section": "Section 3.2: Delta HNSW & Snapshot HNSW Compaction",
+      "topic": "vector_index",
+      "content": "SeekDB integrates the VSAG library to maintain a two-tier HNSW architecture: newly inserted vectors enter the mutable Delta HNSW buffer for immediate visibility, while background compaction merges them into the cache-aligned Snapshot HNSW graph.",
+      "key_takeaway": "双层 HNSW（Delta + Snapshot）兼顾毫秒级实时写入可见性与高吞吐近似最近邻（ANN）检索。",
+      "flashcard": {
+        "question": "SeekDB 如何同时保障新增向量的实时可查性与大规模图索引的查询吞吐？",
+        "answer": "采用 Delta HNSW 承接实时增量写入，并通过后台异步 Compaction 合并至只读优化的 Snapshot HNSW。",
+        "interval_days": 1,
+        "ease": 2.5
+      }
+    },
+    {
+      "doc_id": "PAPER-VSAG-02",
+      "paper_title": "OceanBase SeekDB: Single-Stage Hybrid Vector and Full-Text Retrieval Engine",
+      "section": "Section 5.1: SIMD AVX-512 Vectorized Distance Kernels",
+      "topic": "vector_retrieval",
+      "content": "In large-scale graph traversal, distance computation dominates 80%+ of CPU cycles. SeekDB deploys specialized AVX-512 and ARM SVE SIMD kernels with FMA (Fused Multiply-Add) unrolling, delivering up to 3.8x throughput speedup over standard scalar distance routines while preserving IEEE 754 precision.",
+      "key_takeaway": "基于 AVX-512 与 ARM SVE 的 SIMD FMA 向量距离计算加速，大幅降低图遍历阶段 CPU 周期瓶颈。",
+      "flashcard": {
+        "question": "SeekDB 在高维向量近似最近邻图检索中如何消除距离计算瓶颈？",
+        "answer": "采用定长对齐与 AVX-512/ARM SVE 指令集的 FMA 循环展开，利用硬件向量寄存器并行计算点积与余弦距离，获得近 4 倍的吞吐提升。",
+        "interval_days": 2,
+        "ease": 2.5
+      }
+    },
+    {
+      "doc_id": "PAPER-FAISS-05",
+      "paper_title": "Billion-scale similarity search with GPUs (Faiss)",
+      "section": "Section 2.3: Inverted File with Product Quantization (IVF-PQ)",
+      "topic": "vector_retrieval",
+      "content": "Faiss combines inverted lists with product quantization (IVF-PQ) to achieve sub-millisecond search over billions of vectors. The vector space is partitioned into Voronoi cells via coarse k-means, and residuals are quantized into byte-aligned sub-vector codebooks, enabling fast Asymmetric Distance Computation (ADC) via lookup tables.",
+      "key_takeaway": "倒排聚类（IVF）与乘积量化（PQ）结合残差查找表（ADC），实现十亿级向量亚毫秒低内存检索。",
+      "flashcard": {
+        "question": "Faiss 的 IVF-PQ 索引如何做到将高维浮点向量内存占用压缩 90% 以上且检索极快？",
+        "answer": "通过粗量化（IVF）将空间划分为倒排单元，仅检索距离最近的倒排列表；将高维向量残差切分为低维子空间并量化为字节码，检索时通过查询向量对码本的预计算距离表（ADC）查表求和。",
+        "interval_days": 3,
+        "ease": 2.6
+      }
+    },
+    {
+      "doc_id": "PAPER-HNSW-06",
+      "paper_title": "Efficient and Robust Approximate Nearest Neighbor Search Using Hierarchical Graphs",
+      "section": "Section 3.1: Multi-Layer Skip-List Graph Hierarchy with Exponential Decay",
+      "topic": "vector_retrieval",
+      "content": "Hierarchical Navigable Small World (HNSW) organizes data points into a multi-layer graph inspired by skip-lists. Top layers contain sparse links over long distances for rapid routing, while bottom layers feature dense clustering for precision recall. Each node's maximum layer is assigned via an exponential decay probability distribution.",
+      "key_takeaway": "分层小世界图借鉴跳表多层拓扑思想，顶层稀疏长边粗路由，底层稠密精细聚类。",
+      "flashcard": {
+        "question": "HNSW 索引如何解决传统单层 NSW 图在高维空间中陷入局部最优与长距离路由慢的问题？",
+        "answer": "引入多层分层跳表结构（Hierarchy）：按指数衰减概率决定节点最高层数，搜索从稀疏顶层沿大跨度长边高速逼近目标，再逐层下沉至底层稠密图进行高精度局部探索。",
+        "interval_days": 2,
+        "ease": 2.5
+      }
+    },
+    {
+      "doc_id": "PAPER-ATTN-07",
+      "paper_title": "Attention Is All You Need (Transformer)",
+      "section": "Section 3.2: Scaled Dot-Product Attention & Multi-Head Projection",
+      "topic": "llm_reasoning",
+      "content": "The Transformer computes Attention(Q,K,V) = softmax(Q*K^T / sqrt(d_k)) * V. The scaling factor 1/sqrt(d_k) prevents dot products from growing excessively large for large dimensions d_k, which would push softmax into regions with extremely small gradients. Multi-head projection allows the model to jointly attend to information from different representation subspaces at different positions.",
+      "key_takeaway": "缩放点积注意力通过 1/sqrt(d_k) 抑制梯度饱和，多头注意力跨多个表示子空间并行捕捉上下文相关性。",
+      "flashcard": {
+        "question": "Transformer 为什么要在计算 Q*K^T 矩阵乘积后除以缩放因子 sqrt(d_k)？",
+        "answer": "当向量维度 d_k 较大时，点积结果的方差会扩大到 d_k，导致点积数值极大并让 Softmax 函数进入梯度极小的饱和区，除以 sqrt(d_k) 能将方差稳定在 1，保持训练稳定。",
+        "interval_days": 2,
+        "ease": 2.5
+      }
+    },
+    {
+      "doc_id": "PAPER-FLASH-08",
+      "paper_title": "FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness",
+      "section": "Section 2.2: GPU SRAM vs HBM Memory Hierarchy & Tiling Block Partition",
+      "topic": "llm_reasoning",
+      "content": "Standard attention materializes intermediate N*N attention matrices in high-bandwidth memory (HBM), resulting in memory-bound execution. FlashAttention tiles query, key, and value blocks to compute exact attention entirely within fast on-chip SRAM, utilizing online softmax normalization to eliminate O(N^2) memory footprint and cutting IO latency by 2-4x.",
+      "key_takeaway": "利用 GPU 高速 SRAM 分块（Tiling）与在线 Softmax 规约，避免显存 HBM 具象化 O(N^2) 中间矩阵。",
+      "flashcard": {
+        "question": "FlashAttention 能够在不改变标准注意力数学精度的前提下提速数倍的核心思想是什么？",
+        "answer": "针对现代 GPU 算力远高于显存带宽（IO 瓶颈）的特征，将 Q、K、V 切分为能放入极速片上 SRAM 的小块，结合在线递推 Softmax 算法在 SRAM 中一次性完成计算，杜绝向 HBM 读写 O(N^2) 巨型中间注意力矩阵。",
+        "interval_days": 2,
+        "ease": 2.6
+      }
+    },
+    {
+      "doc_id": "PAPER-TOT-09",
+      "paper_title": "Tree of Thoughts: Deliberate Problem Solving with Large Language Models",
+      "section": "Section 3.3: Tree Search Algorithms (BFS vs DFS with Heuristic Pruning)",
+      "topic": "llm_reasoning",
+      "content": "Tree of Thoughts (ToT) frames complex problem solving as tree exploration where nodes are coherent thought steps. ToT employs BFS for broad exploration across parallel branches and DFS with heuristic value evaluation to prune unpromising subtrees and backtrack when dead-ends are encountered, dramatically outperforming chain-of-thought on strategic planning tasks.",
+      "key_takeaway": "将思维链扩展为思维树（ToT），利用启发式价值评估与回溯机制（Backtracking）实现策略解空间的高效剪枝。",
+      "flashcard": {
+        "question": "思维树（Tree of Thoughts, ToT）相比传统思维链（Chain of Thought, CoT）在解决复杂战略规划任务时的本质优势是什么？",
+        "answer": "CoT 只能单向线性贪婪推进，一步出错全盘皆输；ToT 将思维单元泛化为树状解空间，支持并行分支探索、节点状态自评启发式评分，并在遭遇死胡同时回溯剪枝重试。",
+        "interval_days": 3,
+        "ease": 2.5
+      }
+    },
+    {
+      "doc_id": "PAPER-PC-02",
+      "paper_title": "PowerContext: Deterministic Evidence Selection under Strict Byte Budgets",
+      "section": "Section 4.1: UTF-8 Byte-Bounded PreparedContext Assembly",
+      "topic": "context_engineering",
+      "content": "Given a query and a strict max_bytes UTF-8 budget, PowerContext ranks active atomic memories via hybrid retrieval + HTTP reranking, extracts query-aligned text spans [start:end], and emits a verifiable BEGIN_POWERCONTEXT_PREPARED_CONTEXT_V1 envelope with MemoryCitation.",
+      "key_takeaway": "在严格 UTF-8 字节预算内定位原文高相关子区间 [start:end] 并附带可回查的 MemoryCitation。",
+      "flashcard": {
+        "question": "PowerContext 在上下文窗口受限时如何避免整段长记忆截断导致的证据丢失？",
+        "answer": "开启 evidence_selection=True，围绕查询词提取精确字符区间 [start:end] 并封装为带 MemoryCitation 的 PreparedContext V1 信封。",
+        "interval_days": 1,
+        "ease": 2.5
+      }
+    },
+    {
+      "doc_id": "PAPER-RAG-11",
+      "paper_title": "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks",
+      "section": "Section 2.1: RAG-Sequence vs RAG-Token Probabilistic Formulations",
+      "topic": "rag_context",
+      "content": "RAG models combine parametric seq2seq models with non-parametric memory indexed in vector stores. RAG-Sequence uses the same retrieved document to marginalize across the entire generated sequence, while RAG-Token can draw on different retrieved passages for each generated token, providing fine-grained synthesis across multi-source evidence.",
+      "key_takeaway": "RAG-Sequence 针对整句保持单一证据一致性，RAG-Token 在逐 Token 生成时动态多源融合。",
+      "flashcard": {
+        "question": "经典的 RAG 架构中 RAG-Sequence 与 RAG-Token 两种概率推导方式的区别是什么？",
+        "answer": "RAG-Sequence 假设整篇回复由某一篇召回文档支撑（对文档联合概率边缘化求和）；RAG-Token 允许在生成每一个词时根据当前上下文动态切换并融合不同召回文档的概率分布。",
+        "interval_days": 2,
+        "ease": 2.5
+      }
+    },
+    {
+      "doc_id": "PAPER-RRF-03",
+      "paper_title": "Reciprocal Rank Fusion (RRF) for Lexical-Semantic Hybrid RAG",
+      "section": "Section 2.4: Rank-Based Score Calibration",
+      "topic": "hybrid_rag",
+      "content": "Combining BM25 full-text scores with cosine distance requires rank-based normalization. RRF computes score(d) = 1/(k + rank_vec(d)) + 1/(k + rank_fts(d)) with k=60, eliminating sensitivity to uncalibrated score distributions across modalities.",
+      "key_takeaway": "RRF（k=60）利用倒数排名平滑融合 BM25 词法匹配与 HNSW 向量距离，消除异构分值量纲差异。",
+      "flashcard": {
+        "question": "为什么在混合检索中常使用 RRF（倒数排名融合）而非直接将 BM25 分数与余弦相似度线性相加？",
+        "answer": "BM25 无上界且受词频分布影响大，而余弦相似度位于 [-1,1]，RRF 基于次序融合（1/(k+rank)）无需分值归一化即可稳定校准。",
+        "interval_days": 1,
+        "ease": 2.5
+      }
+    },
+    {
+      "doc_id": "PAPER-DELTA-04",
+      "paper_title": "Incremental Context Pack Transmission in Multi-Turn Agent Workflows",
+      "section": "Section 5.3: Prefix Chunk Reuse and SHA-256 Verification",
+      "topic": "context_engineering",
+      "content": "Across multi-turn research sessions, ContextPackDelta.between(base_pack, target_pack) identifies shared immutable prefix chunks and transmits only the appended delta chunks plus a full-pack SHA-256 digest, cutting cross-agent bandwidth by over 78%.",
+      "key_takeaway": "利用 ContextPackDelta 复用多轮会话的公共前缀分块，仅传输增量分块并通过 SHA-256 校验完整性。",
+      "flashcard": {
+        "question": "多轮 Agent 协作中如何降低重复发送长上下文包的网络与序列化开销？",
+        "answer": "使用 ContextPackDelta.between(base, target) 复用公共前缀分块 ID，仅传输新增后缀分块并校验重建后的 SHA-256 摘要。",
+        "interval_days": 1,
+        "ease": 2.5
+      }
+    },
+    {
+      "doc_id": "PAPER-SM2-14",
+      "paper_title": "SuperMemo SM-2 Spaced Repetition Algorithm & E-Factor Adaptation",
+      "section": "Section 2.1: Exponential Forgetting Curves & Optimal Recall Interval Multipliers",
+      "topic": "memory_cognition",
+      "content": "The SuperMemo SM-2 algorithm models cognitive retention via exponential intervals I(n) = I(n-1) * EF. The Easiness Factor (EF) adapts dynamically based on user feedback grades (0-5) via EF' = EF + (0.1 - (5-q)*(0.08 + (5-q)*0.02)). Repetitions are scheduled immediately before expected memory decay, maximizing long-term memory consolidation with minimal study sessions.",
+      "key_takeaway": "SM-2 算法利用动态难度因子 EF 与遗忘曲线指数间隔乘数，在临界遗忘点前调度主动回忆，巩固长期记忆。",
+      "flashcard": {
+        "question": "Anki 与 SuperMemo 采用的 SM-2 间隔复习算法如何根据用户反馈（0-5评分）动态调整难度系数 EF？",
+        "answer": "依据公式 EF' = EF + (0.1 - (5-grade)*(0.08 + (5-grade)*0.02))；回答越轻松（grade=5）EF 提升越快，复习间隔迅速拉长；一旦遗忘（grade < 3）连击清零，重置回初始间隔重新学习。",
+        "interval_days": 2,
+        "ease": 2.5
+      }
+    }
+  ]
+}
