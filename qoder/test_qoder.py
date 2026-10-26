@@ -324,3 +324,17 @@ def test_invalid_review_grade_rejected():
         json={"learner_id": "review-test-02", "doc_id": "PAPER-RRF-03", "grade": 2},
     )
     assert resp.status_code == 400
+
+
+def test_presets_endpoint_is_dynamic():
+    """GET /api/scholar/presets 应返回从语料库动态聚合的经典文献预设（零硬编码）"""
+    resp = client.get("/api/scholar/presets")
+    assert resp.status_code == 200
+    presets = resp.json()
+    assert isinstance(presets, list)
+    assert len(presets) >= 4
+    for p in presets:
+        assert "title" in p
+        assert "markdown" in p
+        assert p["markdown"].startswith("# ")
+        assert "## " in p["markdown"]

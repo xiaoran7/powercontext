@@ -104,6 +104,11 @@ def get_corpus():
     return engine.list_documents()
 
 
+@router.get("/scholar/presets")
+def get_presets():
+    return engine.get_presets()
+
+
 @router.post("/scholar/review")
 def record_review(req: ReviewRequest):
     engine.ensure_schema()

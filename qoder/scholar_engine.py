@@ -246,22 +246,14 @@ def generate_research_synthesis(
         )
         paragraphs.append(para)
 
-    trade_offs = []
-    topics = set(h.get("topic", "") for h in hits)
-    if any("database" in t for t in topics):
-        trade_offs.append("一致性 vs 吞吐量：通过分区 Paxos / TrueTime 约束外部一致性，但跨区事务需承担两阶段提交或 Commit Wait 延迟。")
-    if any("vector" in t for t in topics):
-        trade_offs.append("检索精度 vs 内存开销：双层 HNSW 或 IVF-PQ 在高维空间利用量化和图分层压缩 90% 显存，但在极高维稀疏特征下召回率存在长尾衰减。")
-    if any("llm" in t for t in topics):
-        trade_offs.append("计算复杂度 vs 显存带宽：FlashAttention 利用片上 SRAM 分块避免 HBM 频繁访存，显著提升 IO-Bound 算子算力利用率。")
-    if any("rag" in t or "context" in t for t in topics):
-        trade_offs.append("全量上下文 vs 严格预算：PowerContext 通过字符级证据抽取在受限窗口保留高信噪比论据，避免长文本带来的模型注意力分散。")
-    if not trade_offs:
-        trade_offs.append("语义召回 vs 精确匹配：RRF (k=60) 融合向量余弦距离与词法 BM25，有效平衡冷启动术语缺失与复杂长查询语义泛化。")
+    trade_offs = [
+        f"《{h.get('paper_title', '文献')}》({h.get('section', '')})：围绕「{h.get('topic', '通用')}」主题，以「{h.get('key_takeaway', '')}」实现核心技术收益，在算法复杂度、系统开销与工程可维护性之间实现严谨权衡。"
+        for h in hits[:4]
+    ]
 
     open_questions = [
-        f"如何在严格 UTF-8 字节预算内进一步压缩《{top_hit['paper_title']}》的证明与公式推导？",
-        "多轮 Agent 在跨会话长程研究中，如何协同复用学习者薄弱点记忆与增量 ContextPackDelta？",
+        f"在严格 UTF-8 字节预算约束下，如何对《{top_hit['paper_title']}》的「{top_hit.get('section', '')}」关键推导进行进一步的数学与工程验证？",
+        f"多智能体在跨会话长程精读协作中，如何结合学习者画像与 ContextPackDelta 动态复用「{top_hit.get('topic', '检索')}」相关上下文？",
     ]
 
     return {
@@ -723,6 +715,33 @@ class ScholarPulseEngine:
             "topics": _corpus_topics(documents),
             "papers": _group_by_paper(documents),
         }
+
+    def get_presets(self) -> List[Dict[str, Any]]:
+        """从语料库动态生成经典文献导入预设（零硬编码，按论文聚合）。"""
+        corpus = _load_seed_corpus()
+        papers_map: Dict[str, Dict[str, Any]] = {}
+        for item in corpus:
+            title = item.get("paper_title", "")
+            if title not in papers_map:
+                papers_map[title] = {
+                    "title": title,
+                    "topic": item.get("topic", "general"),
+                    "sections": [],
+                }
+            papers_map[title]["sections"].append(item)
+
+        presets = []
+        for p in list(papers_map.values())[:6]:
+            md_lines = [f"# {p['title']}\n"]
+            for s in p["sections"]:
+                md_lines.append(f"## {s.get('section', '')}\n{s.get('content', '')}\n")
+            presets.append({
+                "title": p["title"],
+                "topic": p["topic"],
+                "section_count": len(p["sections"]),
+                "markdown": "\n".join(md_lines).strip(),
+            })
+        return presets
 
     def ingest_documents(self, documents: List[Dict[str, Any]]) -> Dict[str, Any]:
         """批量导入论文章节（由导入入口按标题层级切分后写入）。"""

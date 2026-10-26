@@ -107,6 +107,38 @@
    - `node dev/function-check.mjs` 30/30 项自检全部通过；
    - `pytest test_qoder.py` 11/11 项集成测试在远程 Tokyo VPS SeekDB（`100.72.34.104:2881`）上全部通过。
 
+### 环节 3.8：UI/UX 工业级重构与全面解除硬编码（/ui-design Aesthetic Overhaul & Dynamic Presets）
+针对评委进一步的严苛审美与工程要求（“全面解除硬编码、支持深浅双主题无缝切换、按钮 100% 对应真实接口、保持简约克制杜绝浮夸霓虹、重构现代组件组成”），实施了系统级现代 UI/UX 深度重构：
+
+1. **全面解除硬编码（100% 数据驱动）**：
+   - 彻底重构学术综述推导算法：废除基于主题名硬编码的 if-else 分支，改为基于召回文档的真实论据、段落、主题与切片动态合成高置信度结论、技术权衡（Trade-offs）与开放问题（Open Questions）；
+   - 彻底废除前端写死的经典文献预设字典，新增后端与 Edge Function `/api/scholar/presets` 接口，根据语料库中多章节自动聚合生成标准 Markdown 预设；
+   - 示例问题、主题分布、各维度指标计数全部由当前检索召回状态与语料实时动态驱动。
+
+2. **双主题无缝切换系统（Dual-Theme Architecture）**：
+   - 建立全套语义化 CSS 变量体系：
+     - **暗色模式（Dark Mode，默认）**：基于深邃低反射的学术 Slate 蓝灰（`#090d16` / `#0f172a` / `#162033`），高对比度高清晰度，彻底杜绝刺眼反光与赛博光晕；
+     - **浅色模式（Light Mode）**：基于纯净纸质学术质感（`#f8fafc` / `#ffffff` / `#e2e8f0`），字迹清晰醒目，具备杂志级排版质感；
+   - 顶栏右侧提供动态主题切换按钮（`#btn-theme`），图标随模式切换，用户偏好自动持久化至 `localStorage`；
+   - 概念拓扑图谱 SVG 随主题变更平滑重绘，明暗对比自然舒适。
+
+3. **每个按钮映射真实接口（Zero Mock / Dead Buttons）**：
+   - 顶栏新增「系统重置」按钮（`#btn-reset`）：一键调用 `POST /api/scholar/reset`，重置云端知识库与学习者记忆画像；
+   - 顶栏新增「浅色/暗色」主题切换按钮（`#btn-theme`）；
+   - 经典文献预设点击时实时从 `GET /api/scholar/presets` 拉取动态 Markdown 文本；
+   - 生成精读简报（`POST /api/scholar/brief`）、提交复习评分（`POST /api/scholar/review`）、保存学习者画像（`POST /api/scholar/memory`）、全库浏览（`GET /api/scholar/corpus`）、批量导入论文（`POST /api/scholar/ingest/batch`）、导出 Anki TSV 文本，全部百分之百具备真实后端接口与闭环逻辑。
+
+4. **简约克制学术美学（零 Emoji、透明底色、杜绝荧光）**：
+   - 严格遵循 `/ui-design` 规范，界面内所有系统原生 Emoji（如 💡、⚖️ 等）全部替换为纯矢量、带 Alpha 透明底色、主题自适应的 SVG 线性图标；
+   - 品牌主色调整为专业沉稳的学术蓝（`#3b82f6` / `#2563eb`），彻底清除高饱和荧光青绿与刺眼赛博霓虹投影；
+   - 按钮与交互卡片阴影采用细腻扩散的环境光遮蔽（AO）阴影，悬停反馈大方克制。
+
+5. **重构现代组件组成（Modern Component Architecture）**：
+   - 拒绝引入重量级远古组件库（如 jQuery、Bootstrap、Element），全部基于纯原生 HTML5 语义化标签、CSS Variables 与 ES Modules 设计；
+   - 全面增大字号层级（阶梯基准放大至 13px ~ 36px）与交互组件尺寸（按钮高度增至 34px ~ 42px，输入框内边距扩大），大幅增强阅读呼吸感与操作舒适度；
+   - 采用大方圆润现代几何（`--r-lg: 16px`, `--r-md: 12px`, `--r-sm: 8px`）；
+   - 元素视觉中心精确平稳对齐，动效遵循 `prefers-reduced-motion`。
+
 ### 环节 4：Qoder Sites 发布步骤（实际执行）
 1. 在 Qoder 客户端中打开 `qoder/` 目录（发布目录为 `qoder/dist/`，由 `node dev/build-dist.mjs` 生成）；
 2. 通过 **Qoder Sites** 创建站点（`slug: scholar-pulse`），取得 Project/Site 标识；

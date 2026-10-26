@@ -217,6 +217,9 @@ check('scope restricts retrieval', scopedBrief.flashcards.every(c => c.doc_id ==
 const badGrade = await call('POST', '/api/scholar/review', { learner_id: 'local-check-01', doc_id: 'X', grade: 2 });
 check('invalid grade rejected', badGrade.status === 400, badGrade.status);
 
+const presetsRes = await (await call('GET', '/api/scholar/presets')).json();
+check('presets route dynamic', Array.isArray(presetsRes.presets) && presetsRes.presets.length > 0, presetsRes.presets?.length);
+
 let failed = 0;
 for (const item of checks) {
   if (!item.ok) failed++;

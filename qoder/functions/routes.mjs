@@ -3,6 +3,7 @@
 import {
   applyReview,
   buildBrief,
+  buildPaperPresets,
   bm25Scores,
   corpusTopics,
   embeddingForDocument,
@@ -266,6 +267,18 @@ export function application({ db, BackendError }) {
       });
     }
 
+    if (path === '/api/scholar/reset' && request.method === 'POST') {
+      await db.from('scholar_documents').delete().eq('scope_id', SCOPE_ID);
+      await db.from('learner_memories').delete().eq('scope_id', SCOPE_ID);
+      await ensureCorpus();
+      const documents = await loadDocuments();
+      return Response.json({
+        status: 'reset',
+        scope_id: SCOPE_ID,
+        total_sections: documents.length,
+      });
+    }
+
     if (path === '/api/scholar/corpus' && request.method === 'GET') {
       await ensureCorpus();
       const documents = await loadDocuments();
@@ -280,6 +293,14 @@ export function application({ db, BackendError }) {
         })),
         topics: corpusTopics(documents),
         papers: groupByPaper(documents),
+      });
+    }
+
+    if (path === '/api/scholar/presets' && request.method === 'GET') {
+      await ensureCorpus();
+      const documents = await loadDocuments();
+      return Response.json({
+        presets: buildPaperPresets(documents),
       });
     }
 

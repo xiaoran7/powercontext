@@ -6,54 +6,98 @@
   <meta name="description" content="ScholarPulse：Qoder × OceanBase SeekDB × PowerContext 论文精读、概念图谱与自适应间隔复习助手。" />
   <title>ScholarPulse | Qoder × OceanBase SeekDB × PowerContext 论文精读与自适应闪卡助手</title>
   <style>
-    :root {
+    :root, html[data-theme="dark"] {
       --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI",
         "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei",
         "Source Han Sans SC", "Noto Sans CJK SC", "WenQuanYi Micro Hei", Roboto, Helvetica, Arial, sans-serif;
       --font-mono: "JetBrains Mono", "SFMono-Regular", "SF Mono", Menlo, Consolas,
         "Liberation Mono", "PingFang SC", "Microsoft YaHei UI", monospace;
 
-      --bg: #090d14;
-      --bg-glow: #0f1725;
-      --surface: #111925;
-      --surface-2: #16202e;
-      --surface-3: #1b2635;
-      --border: #23303f;
-      --border-soft: #1a2431;
+      /* 暗色模式：深邃、克制、低反射 Slate 蓝灰，彻底杜绝刺眼荧光与赛博光晕 */
+      --bg: #090d16;
+      --bg-glow: #0f172a;
+      --surface: #0f172a;
+      --surface-2: #162033;
+      --surface-3: #1e2c44;
+      --border: #233348;
+      --border-soft: #182436;
 
-      --text: #e9eef7;
-      --text-2: #9dabc1;
+      --text: #f8fafc;
+      --text-2: #94a3b8;
       --text-3: #64748b;
 
-      --accent: #4cc2ff;
-      --accent-dim: #2a90c9;
-      --accent-soft: rgba(76, 194, 255, 0.13);
-      --emerald: #34d399;
-      --emerald-soft: rgba(52, 211, 153, 0.13);
-      --amber: #fbbf24;
-      --amber-soft: rgba(251, 191, 36, 0.15);
-      --rose: #fb7185;
-      --rose-soft: rgba(251, 113, 133, 0.14);
+      /* 主色调：克制学术蓝，具备极高对比度与专业严谨质感 */
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --accent-soft: rgba(59, 130, 246, 0.12);
+      --accent-dim: #1d4ed8;
 
+      /* 语义强调色：温和低饱和，仅作语义区分 */
+      --emerald: #10b981;
+      --emerald-soft: rgba(16, 185, 129, 0.12);
+      --amber: #f59e0b;
+      --amber-soft: rgba(245, 158, 11, 0.12);
+      --rose: #ef4444;
+      --rose-soft: rgba(239, 68, 68, 0.12);
+
+      --code-bg: #0b0f19;
+      --code-border: #1e293b;
+
+      /* 大方圆润与舒适阴影 */
       --r-lg: 16px;
-      --r-md: 11px;
-      --r-sm: 7px;
-      --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
-      --shadow-2: 0 4px 12px -4px rgba(0, 0, 0, 0.5), 0 18px 40px -20px rgba(0, 0, 0, 0.7);
-      --shadow-pop: 0 12px 32px -8px rgba(0, 0, 0, 0.7), 0 0 0 1px var(--border);
+      --r-md: 12px;
+      --r-sm: 8px;
+      --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.25);
+      --shadow-2: 0 4px 16px -2px rgba(0, 0, 0, 0.35);
+      --shadow-pop: 0 12px 32px -8px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--border);
 
-      --step--1: 12px;
-      --step-0: 14px;
-      --step-1: 16px;
-      --step-2: 19px;
-      --step-3: 24px;
-      --step-4: clamp(26px, 3.4vw, 34px);
+      /* 字体层级阶跃全面放大，提升阅读舒适度 */
+      --step--1: 13px;
+      --step-0: 15px;
+      --step-1: 17px;
+      --step-2: 20px;
+      --step-3: 26px;
+      --step-4: clamp(28px, 3.6vw, 36px);
 
       --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
       --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
       --dur-fast: 140ms;
       --dur: 240ms;
       --dur-slow: 420ms;
+    }
+
+    html[data-theme="light"] {
+      /* 亮色模式：清爽纯净纸材质感，高对比度极简学术美学 */
+      --bg: #f8fafc;
+      --bg-glow: #f1f5f9;
+      --surface: #ffffff;
+      --surface-2: #f1f5f9;
+      --surface-3: #e2e8f0;
+      --border: #e2e8f0;
+      --border-soft: #edf2f7;
+
+      --text: #0f172a;
+      --text-2: #475569;
+      --text-3: #94a3b8;
+
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --accent-soft: rgba(37, 99, 235, 0.08);
+      --accent-dim: #3b82f6;
+
+      --emerald: #059669;
+      --emerald-soft: rgba(5, 150, 105, 0.1);
+      --amber: #d97706;
+      --amber-soft: rgba(217, 119, 6, 0.1);
+      --rose: #dc2626;
+      --rose-soft: rgba(220, 38, 38, 0.1);
+
+      --code-bg: #f8fafc;
+      --code-border: #e2e8f0;
+
+      --shadow-1: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+      --shadow-2: 0 6px 18px -4px rgba(15, 23, 42, 0.08);
+      --shadow-pop: 0 16px 36px -8px rgba(15, 23, 42, 0.12), 0 0 0 1px var(--border);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -66,15 +110,17 @@
       font-size: var(--step-0);
       line-height: 1.75;
       color: var(--text);
-      background:
-        radial-gradient(1100px 520px at 50% -220px, var(--bg-glow) 0%, transparent 62%),
-        var(--bg);
-      background-attachment: fixed;
+      background: var(--bg);
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       font-synthesis-weight: none;
-      padding: clamp(20px, 3.2vw, 40px) clamp(16px, 4vw, 32px) 56px;
+      padding: clamp(24px, 3.5vw, 44px) clamp(16px, 4vw, 36px) 64px;
       overflow-wrap: break-word;
+      transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+    }
+
+    .card, .metric, .topbar, .panel, textarea, .text-input, .btn, .select-trigger, .modal-card, .drawer, .flashcard-front, .flashcard-back {
+      transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
     }
 
     .shell { max-width: 1180px; margin: 0 auto; }
@@ -121,13 +167,12 @@
       width: 46px; height: 46px;
       margin-top: 3px;
       display: grid; place-items: center;
-      border-radius: 13px;
-      background: linear-gradient(150deg, var(--accent) 0%, var(--accent-dim) 55%, #1d5e86 100%);
-      box-shadow: 0 6px 18px -8px rgba(76, 194, 255, 0.75);
-      color: #04121c;
-      font-weight: 800;
-      font-size: 15px;
-      letter-spacing: -0.02em;
+      border-radius: var(--r-md);
+      background: var(--accent-soft);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      box-shadow: var(--shadow-1);
+      transition: all var(--dur) var(--ease);
     }
     .brand-text { min-width: 0; }
     .eyebrow {
@@ -365,21 +410,21 @@
         color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
     }
     .btn:active { transform: translateY(1px) scale(0.99); }
-    .btn-primary { background: var(--accent); color: #04121c; }
-    .btn-primary:hover { background: #6ccdff; box-shadow: 0 6px 20px -8px rgba(76, 194, 255, 0.8); }
+    .btn-primary { background: var(--accent); color: #ffffff; }
+    .btn-primary:hover { background: var(--accent-hover); box-shadow: 0 4px 14px rgba(37, 99, 235, 0.28); }
     .btn-ghost { background: var(--surface-2); color: var(--text-2); border-color: var(--border); }
-    .btn-ghost:hover { color: var(--text); border-color: #2f3f52; background: var(--surface-3); }
-    .btn-accent { background: var(--emerald-soft); color: var(--emerald); border-color: rgba(52, 211, 153, 0.3); }
-    .btn-accent:hover { background: rgba(52, 211, 153, 0.2); }
+    .btn-ghost:hover { color: var(--text); border-color: var(--accent); background: var(--surface-3); }
+    .btn-accent { background: var(--emerald-soft); color: var(--emerald); border-color: rgba(16, 185, 129, 0.3); }
+    .btn-accent:hover { background: rgba(16, 185, 129, 0.2); }
     .btn:disabled { opacity: .55; cursor: progress; transform: none; }
-    .btn-sm { height: 32px; padding: 0 12px; font-size: var(--step--1); border-radius: var(--r-sm); }
+    .btn-sm { height: 34px; padding: 0 14px; font-size: var(--step--1); border-radius: var(--r-sm); }
     .btn .spin { animation: spin 900ms linear infinite; }
     .count-badge {
       min-width: 20px; height: 20px; padding: 0 6px;
       display: inline-grid; place-items: center;
       border-radius: 999px;
-      background: var(--rose); color: #1a0b0e;
-      font-size: 11px; font-weight: 800;
+      background: var(--rose); color: #ffffff;
+      font-size: 11px; font-weight: 700;
       font-variant-numeric: tabular-nums;
     }
     .count-badge[hidden] { display: none; }
@@ -1041,7 +1086,13 @@
   <div class="shell">
     <header class="topbar">
       <div class="brand">
-        <div class="brand-mark" aria-hidden="true">SP</div>
+        <div class="brand-mark" aria-hidden="true" title="ScholarPulse">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            <path d="M9 8h6M9 12h4"/>
+          </svg>
+        </div>
         <div class="brand-text">
           <div class="eyebrow">Qoder × OceanBase SeekDB × PowerContext</div>
           <h1>ScholarPulse 论文精读与自适应闪卡教练</h1>
@@ -1052,6 +1103,14 @@
       </div>
       <div class="topbar-side">
         <div class="topbar-actions">
+          <button type="button" class="btn btn-ghost" id="btn-theme" aria-label="切换浅色/暗色主题" title="切换浅色/暗色主题">
+            <span id="theme-icon" style="display:inline-flex; align-items:center;"></span>
+            <span id="theme-label">暗色</span>
+          </button>
+          <button type="button" class="btn btn-ghost" id="btn-reset" aria-label="重置语料与画像" title="重置语料库与学习者记忆">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+            重置
+          </button>
           <button type="button" class="btn btn-ghost" id="btn-import">
             <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <path d="M8 11V3m0 0L5 6m3-3 3 3M2.5 10.5v1.75A1.75 1.75 0 0 0 4.25 14h7.5A1.75 1.75 0 0 0 13.5 12.25V10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -1264,14 +1323,11 @@
     </div>
     <div class="drawer-body">
       <div class="preset-row">
-        <span class="preset-title">💡 经典文献预设（一键填入并解析）：</span>
-        <div class="preset-chips">
-          <button type="button" class="preset-chip" data-preset="oceanbase">《OceanBase 分布式架构》</button>
-          <button type="button" class="preset-chip" data-preset="spanner">《Google Spanner TrueTime》</button>
-          <button type="button" class="preset-chip" data-preset="flashattention">《FlashAttention SRAM 计算》</button>
-          <button type="button" class="preset-chip" data-preset="hnsw">《HNSW 分层跳表图索引》</button>
-          <button type="button" class="preset-chip" data-preset="powercontext">《PowerContext 确定性上下文》</button>
-        </div>
+        <span class="preset-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px; margin-right:4px;"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48 2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48 2.83-2.83"/></svg>
+          经典文献预设（动态数据源）：
+        </span>
+        <div class="preset-chips" id="preset-chips"></div>
       </div>
       <div class="dropzone" id="dropzone">
         <div><strong>点击选择文件</strong> 或拖拽到此处</div>
@@ -1364,6 +1420,7 @@
       applyReview,
       bm25Scores,
       buildBrief,
+      buildPaperPresets,
       corpusTopics,
       embeddingForDocument,
       fuseChannels,
@@ -1628,15 +1685,16 @@
 
       const tradeoffsBox = document.getElementById('synthesis-tradeoffs-box');
       const tradeoffs = synthesis.trade_offs || [];
+      const scaleIcon = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px; margin-right:4px; opacity:0.85"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>`;
       if (!tradeoffs.length) {
         tradeoffsBox.innerHTML = '<div class="empty">未识别到明显的架构技术权衡</div>';
       } else {
         tradeoffsBox.innerHTML = tradeoffs.map(t => {
           const parts = t.split('：');
           if (parts.length > 1) {
-            return `<div class="tradeoff-card"><strong>⚖️ ${escapeHtml(parts[0])}</strong>：${escapeHtml(parts.slice(1).join('：'))}</div>`;
+            return `<div class="tradeoff-card">${scaleIcon}<strong>${escapeHtml(parts[0])}</strong>：${escapeHtml(parts.slice(1).join('：'))}</div>`;
           }
-          return `<div class="tradeoff-card"><strong>⚖️ 关键权衡</strong>：${escapeHtml(t)}</div>`;
+          return `<div class="tradeoff-card">${scaleIcon}<strong>关键权衡</strong>：${escapeHtml(t)}</div>`;
         }).join('');
       }
 
@@ -2429,43 +2487,55 @@
       if (queryInput.value.trim()) runBrief();
     });
 
-    /* ---------------- 经典文献预设 ---------------- */
-    const LANDMARK_PRESETS = {
-      oceanbase: {
-        topic: "distributed_database",
-        text: "# OceanBase: A Distributed Shared-Nothing Multitenant Database\n\n## Section 2.1: Partition-Level Multi-Paxos\nOceanBase achieves high availability by partitioning tables into independent Multi-Paxos groups. Master leases decouple partition leadership from global consensus.\n\n## Section 4.3: LSM-Tree Storage Engine with Daily Major Compaction\nAll modifications land in memory MemTable first. Daily Major Compaction merges baseline data at off-peak hours to avoid daytime interference."
-      },
-      spanner: {
-        topic: "distributed_database",
-        text: "# Spanner: Google's Globally-Distributed Database\n\n## Section 3.1: TrueTime API and Uncertainty Windows\nTrueTime exposes guaranteed uncertainty bounds [earliest, latest] (< 7ms) across global GPS and atomic clocks.\n\n## Section 4.2: Commit Wait and External Consistency\nTransactions enforce commit wait (waiting 2*epsilon) before releasing locks, establishing linearizable timestamps worldwide."
-      },
-      flashattention: {
-        topic: "llm_reasoning",
-        text: "# FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness\n\n## Section 2.2: GPU SRAM Tiling Architecture\nFlashAttention tiles Q, K, V blocks into on-chip SRAM, computing online softmax to eliminate O(N^2) HBM memory traffic.\n\n## Section 3.1: Backward Pass Gradient Recomputation\nIn the backward pass, attention matrices are recomputed from SRAM blocks instead of loaded from slow HBM."
-      },
-      hnsw: {
-        topic: "vector_retrieval",
-        text: "# Efficient and Robust Approximate Nearest Neighbor Search Using Hierarchical Graphs\n\n## Section 3.1: Multi-Layer Skip-List Graph Hierarchy\nHNSW organizes vector points into multiple layers of small-world graphs. Sparse top layers provide fast routing while dense bottom layers guarantee high recall."
-      },
-      powercontext: {
-        topic: "context_engineering",
-        text: "# PowerContext: Deterministic Evidence Selection under Strict Byte Budgets\n\n## Section 4.1: UTF-8 Byte-Bounded PreparedContext Assembly\nPowerContext ranks atomic memories and selects exact character spans [start:end] to build strict UTF-8 bounded envelopes with MemoryCitation.\n\n## Section 5.3: ContextPackDelta Incremental Handoff\nIdentifies shared prefix chunk IDs across multi-turn sessions, cutting network bandwidth by over 78%."
-      }
-    };
+    /* ---------------- 经典文献预设（100% 动态数据驱动） ---------------- */
+    let dynamicPresets = [];
 
-    document.querySelector('.preset-chips').addEventListener('click', (event) => {
-      const chip = event.target.closest('[data-preset]');
+    async function loadPresets() {
+      try {
+        const res = await apiGet('/presets');
+        if (res && Array.isArray(res.presets) && res.presets.length) {
+          dynamicPresets = res.presets;
+        } else if (Array.isArray(res) && res.length) {
+          dynamicPresets = res;
+        } else {
+          dynamicPresets = buildPaperPresets(state.documents);
+        }
+      } catch {
+        dynamicPresets = buildPaperPresets(state.documents);
+      }
+      renderPresetChips();
+    }
+
+    function renderPresetChips() {
+      const box = document.getElementById('preset-chips');
+      if (!box) return;
+      if (!dynamicPresets || !dynamicPresets.length) {
+        box.innerHTML = '<span class="card-note">加载文献预设中…</span>';
+        return;
+      }
+      box.innerHTML = dynamicPresets.map((p, idx) => `
+        <button type="button" class="preset-chip" data-idx="${idx}" title="点击一键载入《${escapeHtml(p.title)}》">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px; margin-right:4px; opacity:0.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          《${escapeHtml(p.title)}》
+        </button>
+      `).join('');
+    }
+
+    document.getElementById('preset-chips')?.addEventListener('click', (event) => {
+      const chip = event.target.closest('[data-idx]');
       if (!chip) return;
-      const presetKey = chip.dataset.preset;
-      const preset = LANDMARK_PRESETS[presetKey];
+      const idx = parseInt(chip.dataset.idx, 10);
+      const preset = dynamicPresets[idx];
       if (!preset) return;
-      importText.value = preset.text;
-      importTopicSelect.setOptions(
-        [...state.topics.map(t => ({ value: t.topic, label: t.topic, meta: `${t.count} 章` })),
-         { value: 'custom', label: 'custom', meta: '自定义' }],
-        preset.topic
-      );
-      toast(`已填入预设《${chip.textContent.replace(/[《》]/g, '')}》`, 'ok');
+      importText.value = preset.markdown;
+      if (preset.topic) {
+        importTopicSelect.setOptions(
+          [...state.topics.map(t => ({ value: t.topic, label: t.topic, meta: `${t.count} 章` })),
+           { value: 'custom', label: 'custom', meta: '自定义' }],
+          preset.topic
+        );
+      }
+      toast(`已填入动态预设《${preset.title}》`, 'ok');
       parseImport();
     });
 
@@ -2514,6 +2584,62 @@
     });
 
     /* ---------------- 其他控件 ---------------- */
+    /* ---------------- 主题切换系统 ---------------- */
+    function applyTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      try { localStorage.setItem('scholarpulse.theme', theme); } catch {}
+      const icon = document.getElementById('theme-icon');
+      const label = document.getElementById('theme-label');
+      if (theme === 'light') {
+        if (icon) {
+          icon.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+        }
+        if (label) label.textContent = '浅色';
+      } else {
+        if (icon) {
+          icon.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" stroke-linecap="round"/></svg>`;
+        }
+        if (label) label.textContent = '暗色';
+      }
+      if (state.documents && state.documents.length) {
+        renderConceptGraph(state.documents);
+      }
+    }
+
+    function initTheme() {
+      let saved = 'dark';
+      try {
+        saved = localStorage.getItem('scholarpulse.theme') ||
+          (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+      } catch {}
+      applyTheme(saved);
+    }
+
+    document.getElementById('btn-theme')?.addEventListener('click', () => {
+      const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+      const target = cur === 'dark' ? 'light' : 'dark';
+      applyTheme(target);
+      toast(target === 'light' ? '已切换至极简浅色主题' : '已切换至深邃暗色主题', 'ok');
+    });
+
+    document.getElementById('btn-reset')?.addEventListener('click', async () => {
+      const ok = confirm('确认要重置 ScholarPulse 知识库与学习者画像吗？\n系统将恢复为 16 篇权威文献初始状态并清空当前薄弱点记忆。');
+      if (!ok) return;
+      toast('正在重置系统与学习者记忆…', 'info');
+      try {
+        await apiPost('/reset', {});
+        state.profile = { weak_topics: [], mastered_doc_ids: [], preferred_depth: 'deep-derivation', review_note: '', cards: {} };
+        writeStore(PROFILE_KEY, state.profile);
+        await loadCorpus();
+        await loadPresets();
+        renderMemoryStrip();
+        await runBrief();
+        toast('系统已成功重置为初始状态', 'ok');
+      } catch (err) {
+        toast('重置失败: ' + err.message, 'err');
+      }
+    });
+
     document.getElementById('btn-run').addEventListener('click', runBrief);
     document.getElementById('btn-note').addEventListener('click', async () => {
       state.profile = mergeProfiles(state.profile, { review_note: document.getElementById('note-input').value.trim() });
@@ -2561,6 +2687,8 @@
       } catch { /* 无服务端画像时使用本机记忆 */ }
 
       renderMemoryStrip();
+      initTheme();
+      await loadPresets();
       const seedQuestion = state.documents[0]?.key_takeaway;
       if (seedQuestion) queryInput.value = seedQuestion;
       await runBrief();

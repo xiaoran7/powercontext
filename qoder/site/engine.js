@@ -399,30 +399,20 @@ export function generateResearchSynthesis(researchQuestion, hits, citations = []
     const h = hits[idx];
     const citeBadge = `[${h.doc_id}:§${h.section}]`;
     const para = `**${idx + 1}. 《${h.paper_title}》 (${h.section})**：${h.content} 其核心论据为：${h.key_takeaway} ${citeBadge}`;
-    paragraphs.append ? paragraphs.append(para) : paragraphs.push(para);
+    paragraphs.push(para);
   }
 
-  const tradeOffs = [];
-  const topics = new Set(hits.map(h => h.topic || ''));
-  if ([...topics].some(t => t.includes('database'))) {
-    tradeOffs.push('一致性 vs 吞吐量：通过分区 Paxos / TrueTime 约束外部一致性，但跨区事务需承担两阶段提交或 Commit Wait 延迟。');
-  }
-  if ([...topics].some(t => t.includes('vector'))) {
-    tradeOffs.push('检索精度 vs 内存开销：双层 HNSW 或 IVF-PQ 在高维空间利用量化和图分层压缩 90% 显存，但在极高维稀疏特征下召回率存在长尾衰减。');
-  }
-  if ([...topics].some(t => t.includes('llm'))) {
-    tradeOffs.push('计算复杂度 vs 显存带宽：FlashAttention 利用片上 SRAM 分块避免 HBM 频繁访存，显著提升 IO-Bound 算子算力利用率。');
-  }
-  if ([...topics].some(t => t.includes('rag') || t.includes('context'))) {
-    tradeOffs.push('全量上下文 vs 严格预算：PowerContext 通过字符级证据抽取在受限窗口保留高信噪比论据，避免长文本带来的模型注意力分散。');
-  }
-  if (!tradeOffs.length) {
-    tradeOffs.push('语义召回 vs 精确匹配：RRF (k=60) 融合向量余弦距离与词法 BM25，有效平衡冷启动术语缺失与复杂长查询语义泛化。');
-  }
+  const tradeOffs = hits.slice(0, 4).map(h => {
+    const title = h.paper_title || '文献';
+    const sec = h.section || '';
+    const takeaway = h.key_takeaway || '';
+    const topic = h.topic || '通用';
+    return `《${title}》(${sec})：围绕「${topic}」主题，以「${takeaway}」实现核心技术收益，在算法复杂度、系统开销与工程可维护性之间实现严谨权衡。`;
+  });
 
   const openQuestions = [
-    `如何在严格 UTF-8 字节预算内进一步压缩《${topHit.paper_title}》的证明与公式推导？`,
-    '多轮 Agent 在跨会话长程研究中，如何协同复用学习者薄弱点记忆与增量 ContextPackDelta？',
+    `在严格 UTF-8 字节预算约束下，如何对《${topHit.paper_title}》的「${topHit.section || ''}」关键推导进行进一步的数学与工程验证？`,
+    `多智能体在跨会话长程精读协作中，如何结合学习者画像与 ContextPackDelta 动态复用「${topHit.topic || '检索'}」相关上下文？`,
   ];
 
   return {
@@ -431,6 +421,35 @@ export function generateResearchSynthesis(researchQuestion, hits, citations = []
     trade_offs: tradeOffs,
     open_questions: openQuestions,
   };
+}
+
+export function buildPaperPresets(corpus) {
+  const map = new Map();
+  for (const item of corpus ?? []) {
+    const title = item.paper_title || item.doc_id;
+    if (!map.has(title)) {
+      map.set(title, {
+        title,
+        topic: item.topic || 'general',
+        sections: [],
+      });
+    }
+    map.get(title).sections.push(item);
+  }
+  return [...map.values()].slice(0, 6).map(p => {
+    const md = [`# ${p.title}`, ''];
+    for (const s of p.sections) {
+      md.push(`## ${s.section}`);
+      md.push(s.content || s.key_takeaway || '');
+      md.push('');
+    }
+    return {
+      title: p.title,
+      topic: p.topic,
+      section_count: p.sections.length,
+      markdown: md.join('\n').trim(),
+    };
+  });
 }
 
 export function buildBrief({ researchQuestion, maxBytes, learnerId, profile, hits, cardState = {}, nowSeconds = 0 }) {
