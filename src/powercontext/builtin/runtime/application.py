@@ -933,6 +933,8 @@ class ScopedContextApplication:
         families: set[str] = (
             {section.family for section in request.assembly.sections}
             if request.assembly is not None
+            else {MEMORY_FAMILY}
+            if request.evidence_selection
             else {MEMORY_FAMILY, EXPERIENCE_FAMILY, TOPIC_MEMORY_FAMILY}
         )
         # Caller-owned cache of the query vectors round 0 already paid for, keyed by scope.
