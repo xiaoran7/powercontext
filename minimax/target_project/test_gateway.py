@@ -1,3 +1,14 @@
+import os
+import sys
+
+if os.environ.get("PYTHONPATH"):
+    for p in reversed(os.environ["PYTHONPATH"].split(os.pathsep)):
+        if p and p not in sys.path:
+            sys.path.insert(0, p)
+        elif p in sys.path:
+            sys.path.remove(p)
+            sys.path.insert(0, p)
+
 from gateway import TokenBucketGateway
 
 
@@ -12,8 +23,20 @@ class FakeClock:
         self.now += seconds
 
 
+def test_regression_basic_token_consumption():
+    """Regression test: basic within-quota token consumption must pass both before and after modification."""
+    gw = TokenBucketGateway(max_tokens_per_window=1000)
+    d1 = gw.check_and_consume("tenant-reg", 300)
+    assert d1.allowed is True
+    assert d1.remaining_tokens == 700
+
+    d2 = gw.check_and_consume("tenant-reg", 200)
+    assert d2.allowed is True
+    assert d2.remaining_tokens == 500
+
+
 def test_token_quota_and_sliding_window_eviction():
-    """Verifies SPEC-GW-01 and PIT-GW-01 (rejected request does not pollute window)."""
+    """Target feature test 1: Verifies SPEC-GW-01 and PIT-GW-01 (rejected request does not pollute window)."""
     clock = FakeClock()
     gw = TokenBucketGateway(
         window_sec=60.0,
@@ -46,7 +69,7 @@ def test_token_quota_and_sliding_window_eviction():
 
 
 def test_circuit_breaker_state_transitions():
-    """Verifies SPEC-GW-02, DEC-GW-02 (circuit-first), and PIT-GW-02 (half-open re-open timestamp)."""
+    """Target feature test 2: Verifies SPEC-GW-02, DEC-GW-02 (circuit-first), and PIT-GW-02."""
     clock = FakeClock()
     gw = TokenBucketGateway(
         window_sec=60.0,
@@ -85,7 +108,7 @@ def test_circuit_breaker_state_transitions():
 
 
 def test_gateway_headers_contract():
-    """Verifies SPEC-GW-03 observability headers contract."""
+    """Target feature test 3: Verifies SPEC-GW-03 observability headers contract."""
     gw = TokenBucketGateway()
     decision = gw.check_and_consume("tenant-c", 120)
     headers = decision.to_headers()

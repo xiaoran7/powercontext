@@ -1,19 +1,23 @@
---- a/target_project/gateway.py (before SDD)
-+++ b/target_project/gateway.py (after SDD)
-@@ -1,32 +1,145 @@
--"""Initial baseline before SDD evolution (Fixed counter, no sliding window, no circuit breaker)."""
-+"""
+diff --git a/snapshots/before/gateway.py b/snapshots/after/gateway.py
+index 66eab17..0e0cc70 100644
+--- a/snapshots/before/gateway.py
++++ b/snapshots/after/gateway.py
+@@ -1,27 +1,44 @@
+ """
+-Initial baseline before SDD evolution (Fixed counter, no sliding window eviction, no circuit breaker).
+-Preserves basic token quota deduction for regression compatibility, while target SDD features
+-(SPEC-GW-01 sliding window + PIT-GW-01, SPEC-GW-02 circuit breaker, SPEC-GW-03 headers) are not yet implemented.
 +SDD Target Project: AI Token Rate-Limiting & Circuit-Breaker Gateway
 +Implements:
 +- SPEC-GW-01: Sliding-window dual-bucket (request count + token quota) limiter
 +- SPEC-GW-02: Three-state upstream circuit breaker (CLOSED / OPEN / HALF_OPEN)
 +- SPEC-GW-03: Standard observability headers export
-+"""
+ """
  
 +from collections import deque
  from dataclasses import dataclass
--from typing import Dict
-+import time
+ import time
+-from typing import Callable, Dict
 +from typing import Callable, Deque, Dict, Tuple
  
  
@@ -23,11 +27,15 @@
 +
      allowed: bool
      remaining_tokens: int
+-    retry_after_sec: float = 0.0
+-    circuit_state: str = "CLOSED"
+-    reason: str = "ok"
 +    retry_after_sec: float
 +    circuit_state: str
-     reason: str
-+
-+    def to_headers(self) -> Dict[str, str]:
++    reason: str
+ 
+     def to_headers(self) -> Dict[str, str]:
+-        return {}
 +        return {
 +            "X-RateLimit-Allowed": "true" if self.allowed else "false",
 +            "X-RateLimit-Remaining-Tokens": str(max(0, self.remaining_tokens)),
@@ -38,24 +46,18 @@
  
  
  class TokenBucketGateway:
--    def __init__(self, max_tokens_per_window: int = 1000) -> None:
 +    """
 +    Implements SPEC-GW-01, SPEC-GW-02, and SPEC-GW-03 while enforcing
 +    DEC-GW-01 (injected monotonic clock), DEC-GW-02 (circuit-first evaluation),
 +    PIT-GW-01 (no window mutation on rejected requests), and PIT-GW-02 (refresh opened_at on half-open failure).
 +    """
 +
-+    def __init__(
-+        self,
-+        window_sec: float = 60.0,
-+        max_requests_per_window: int = 10,
-+        max_tokens_per_window: int = 1000,
-+        failure_threshold: int = 3,
-+        recovery_timeout_sec: float = 30.0,
-+        clock_fn: Callable[[], float] = time.monotonic,
-+    ) -> None:
-+        self.window_sec = float(window_sec)
-+        self.max_requests_per_window = int(max_requests_per_window)
+     def __init__(
+         self,
+         window_sec: float = 60.0,
+@@ -34,29 +51,95 @@ class TokenBucketGateway:
+         self.window_sec = float(window_sec)
+         self.max_requests_per_window = int(max_requests_per_window)
          self.max_tokens_per_window = int(max_tokens_per_window)
 -        self._used: Dict[str, int] = {}
 +        self.failure_threshold = int(failure_threshold)
@@ -81,11 +83,13 @@
 +        return self._circuit_state
  
      def check_and_consume(self, tenant_id: str, requested_tokens: int) -> RateLimitDecision:
--        used = self._used.get(tenant_id, 0)
--        if used + requested_tokens > self.max_tokens_per_window:
 +        """SPEC-GW-01 & SPEC-GW-02: Circuit-first admission and sliding-window token deduction."""
-+        if requested_tokens <= 0:
-+            raise ValueError("requested_tokens must be positive")
+         if requested_tokens <= 0:
+             raise ValueError("requested_tokens must be positive")
+-        used = self._used.get(tenant_id, 0)
+-        # Bug before SDD (PIT-GW-01): mutates usage before checking quota and never evicts expired window
+-        self._used[tenant_id] = used + requested_tokens
+-        if self._used[tenant_id] > self.max_tokens_per_window:
 +
 +        now = self._clock()
 +        q = self._evict_expired(tenant_id, now)
@@ -96,9 +100,8 @@
 +        c_state = self._current_circuit_state(now)
 +        if c_state == "OPEN":
 +            retry_after = max(0.0, self.recovery_timeout_sec - (now - self._opened_at))
-             return RateLimitDecision(
-                 allowed=False,
--                remaining_tokens=max(0, self.max_tokens_per_window - used),
++            return RateLimitDecision(
++                allowed=False,
 +                remaining_tokens=remaining_before,
 +                retry_after_sec=round(retry_after, 3),
 +                circuit_state="OPEN",
@@ -109,8 +112,11 @@
 +        if len(q) >= self.max_requests_per_window:
 +            oldest_ts = q[0][0]
 +            retry_after = max(0.0, (oldest_ts + self.window_sec) - now)
-+            return RateLimitDecision(
-+                allowed=False,
+             return RateLimitDecision(
+                 allowed=False,
+-                remaining_tokens=max(0, self.max_tokens_per_window - self._used[tenant_id]),
+-                retry_after_sec=0.0,
+-                circuit_state="CLOSED",
 +                remaining_tokens=remaining_before,
 +                retry_after_sec=round(retry_after, 3),
 +                circuit_state=c_state,
@@ -127,19 +133,20 @@
 +                circuit_state=c_state,
                  reason="token_quota_exceeded",
              )
--        self._used[tenant_id] = used + requested_tokens
 +
 +        q.append((now, requested_tokens))
          return RateLimitDecision(
              allowed=True,
 -            remaining_tokens=self.max_tokens_per_window - self._used[tenant_id],
 +            remaining_tokens=self.max_tokens_per_window - (used_tokens + requested_tokens),
-+            retry_after_sec=0.0,
+             retry_after_sec=0.0,
+-            circuit_state="CLOSED",
 +            circuit_state=c_state,
              reason="ok",
          )
-+
-+    def record_upstream_outcome(self, success: bool) -> str:
+ 
+     def record_upstream_outcome(self, success: bool) -> str:
+-        return "CLOSED"
 +        """SPEC-GW-02: Update three-state circuit breaker based on upstream call outcome."""
 +        now = self._clock()
 +        c_state = self._current_circuit_state(now)

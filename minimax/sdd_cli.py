@@ -9,8 +9,10 @@ def main():
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    sub.add_parser("init", help="初始化远端 SeekDB 六大 SDD 上下文维度表与基准数据")
-    sub.add_parser("demo", help="一键执行完整 SDD 闭环演示（初始化 + 五大核心查询 + 目标项目验收回写）")
+    init_parser = sub.add_parser("init", help="初始化或重置远端 SeekDB 六大 SDD 上下文维度表与基准数据")
+    init_parser.add_argument("--reset", action="store_true", help="清空并恢复初始状态")
+
+    sub.add_parser("demo", help="一键执行完整 SDD 闭环演示（初始化 + 五大核心查询 + 状态复用 + 目标项目验收回写）")
 
     q_parser = sub.add_parser("query", help="执行五大核心 SDD 查询之一")
     q_parser.add_argument(
@@ -27,7 +29,7 @@ def main():
     engine = MiniMaxSDDContextEngine()
 
     if args.command == "init":
-        res = engine.init_and_seed_seekdb()
+        res = engine.init_and_seed_seekdb(force_reset=args.reset)
         print(json.dumps(res, ensure_ascii=False, indent=2))
     elif args.command == "query":
         engine.init_and_seed_seekdb()
@@ -45,19 +47,29 @@ def main():
             )
         print(json.dumps(out, ensure_ascii=False, indent=2))
     elif args.command == "demo":
-        init_res = engine.init_and_seed_seekdb()
+        init_res = engine.init_and_seed_seekdb(force_reset=True)
         q1 = engine.query_1_spec_location_and_status("SPEC-GW-02")
         q2 = engine.query_2_change_impact_scope("SPEC-GW-01")
         q3 = engine.query_3_decision_rationale("为什么要先检查熔断器状态再扣减配额？")
         q4 = engine.query_4_module_pitfalls_and_guardrails("gateway.circuit_breaker")
-        q5 = engine.query_5_assemble_task_context_pack("TASK-GW-102", "SPEC-GW-02", max_bytes=1800)
-        verify_res = engine.verify_target_project_and_sync_seekdb()
+        engine.save_task_state(
+            task_id="TASK-GW-102",
+            spec_id="SPEC-GW-02",
+            completed_items=["SPEC-GW-01 滑动窗口双桶限流"],
+            todo_items=["SPEC-GW-02 三态熔断器落地", "SPEC-GW-03 响应头验证"],
+            verification_summary="before snapshot: 1 passed, 3 failed",
+        )
+        restarted_engine = MiniMaxSDDContextEngine()
+        reused_state = restarted_engine.load_task_state("TASK-GW-102")
+        q5 = restarted_engine.query_5_assemble_task_context_pack("TASK-GW-102", "SPEC-GW-02", max_bytes=1800)
+        verify_res = restarted_engine.verify_target_project_and_sync_seekdb()
         summary = {
             "init": init_res,
             "query_1_spec_location": q1,
             "query_2_impact_scope": q2,
             "query_3_decision_rationale": q3,
             "query_4_pitfalls": q4,
+            "reused_task_state_after_restart": reused_state,
             "query_5_prepared_context": q5,
             "target_project_verification": verify_res,
         }

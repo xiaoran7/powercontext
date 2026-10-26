@@ -1,5 +1,5 @@
-from typing import Optional
-from fastapi import FastAPI
+from typing import Any, Dict, List, Optional
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from sdd_engine import MiniMaxSDDContextEngine
@@ -7,7 +7,7 @@ from sdd_engine import MiniMaxSDDContextEngine
 app = FastAPI(
     title="MiniMax × OceanBase SeekDB × PowerContext SDD 上下文管理系统",
     description="2026 OceanBase AI 数据库大赛 - MiniMax 赛题交付系统 (OB-P:xI1C-CXPJXT4ztVpZDY6_A)",
-    version="1.0.0",
+    version="1.1.0",
 )
 
 engine = MiniMaxSDDContextEngine()
@@ -20,9 +20,68 @@ class SDDQueryRequest(BaseModel):
     max_bytes: int = Field(1800, ge=400, le=8000, description="PreparedContext 字节预算")
 
 
+class SDDUpsertRequest(BaseModel):
+    record_id: str
+    dimension: str = "spec_code_map"
+    spec_id: str
+    module_name: str
+    title: str
+    content: str
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class SDDTaskStateSaveRequest(BaseModel):
+    task_id: str
+    spec_id: str
+    completed_items: List[str]
+    todo_items: List[str]
+    verification_summary: str
+
+
 @app.get("/api/sdd/status")
 def get_sdd_status():
     return engine.init_and_seed_seekdb()
+
+
+@app.post("/api/sdd/reset")
+def reset_sdd_store():
+    return engine.init_and_seed_seekdb(force_reset=True)
+
+
+@app.post("/api/sdd/upsert")
+def upsert_sdd_spec(req: SDDUpsertRequest):
+    engine.init_and_seed_seekdb()
+    return engine.upsert_sdd_record(
+        record_id=req.record_id,
+        dimension=req.dimension,
+        spec_id=req.spec_id,
+        module_name=req.module_name,
+        title=req.title,
+        content=req.content,
+        metadata=req.metadata,
+    )
+
+
+@app.post("/api/sdd/state")
+def save_task_state_endpoint(req: SDDTaskStateSaveRequest):
+    engine.init_and_seed_seekdb()
+    return engine.save_task_state(
+        task_id=req.task_id,
+        spec_id=req.spec_id,
+        completed_items=req.completed_items,
+        todo_items=req.todo_items,
+        verification_summary=req.verification_summary,
+    )
+
+
+@app.get("/api/sdd/state/{task_id}")
+def get_task_state_endpoint(task_id: str):
+    # 使用新实例验证跨重启/无内存缓存状态复用
+    fresh_engine = MiniMaxSDDContextEngine()
+    loaded = fresh_engine.load_task_state(task_id)
+    if loaded is None:
+        raise HTTPException(status_code=404, detail=f"Task state {task_id} not found")
+    return loaded
 
 
 @app.post("/api/sdd/query")

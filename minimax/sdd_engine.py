@@ -706,3 +706,139 @@ class MiniMaxSDDContextEngine:
             "verified_at": now_iso,
             "pytest_stdout": proc.stdout[-800:],
         }
+
+    def upsert_sdd_record(
+        self,
+        record_id: str,
+        dimension: str,
+        spec_id: str,
+        module_name: str,
+        title: str,
+        content: str,
+        metadata: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """
+        支持动态更新或新增 SDD 规格/代码/测试记录并重新导入至远端 SeekDB：
+        确保后续查询与 PreparedContext 装配立即使用更新后的规格内容（满足 4.1 节「上下文正确」动态更新要求）。
+        """
+        emb = _deterministic_text_embedding(
+            f"{record_id} {spec_id} {module_name} {title} {content}"
+        )
+        vec_str = "[" + ",".join(f"{x:.6f}" for x in emb) + "]"
+        src_ref = (
+            str(SourceRef(source_type="sdd_record", source_id=record_id))
+            if HAS_POWERCONTEXT
+            else f"sdd_record:{record_id}"
+        )
+        conn = self.get_conn()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO minimax_sdd_context_store
+                    (record_id, scope_id, dimension, spec_id, module_name, title, content, metadata_json, powercontext_source_ref, embedding)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ON DUPLICATE KEY UPDATE
+                        dimension = VALUES(dimension),
+                        spec_id = VALUES(spec_id),
+                        module_name = VALUES(module_name),
+                        title = VALUES(title),
+                        content = VALUES(content),
+                        metadata_json = VALUES(metadata_json),
+                        powercontext_source_ref = VALUES(powercontext_source_ref),
+                        embedding = VALUES(embedding)
+                    """,
+                    (
+                        record_id,
+                        self.scope_id,
+                        dimension,
+                        spec_id,
+                        module_name,
+                        title,
+                        content,
+                        json.dumps(metadata, ensure_ascii=False),
+                        src_ref,
+                        vec_str,
+                    ),
+                )
+        finally:
+            conn.close()
+        return {"status": "upserted", "record_id": record_id, "spec_id": spec_id}
+
+    def save_task_state(
+        self,
+        task_id: str,
+        spec_id: str,
+        completed_items: List[str],
+        todo_items: List[str],
+        verification_summary: str,
+    ) -> Dict[str, Any]:
+        """
+        使用 PowerContext ArtifactAddress 将任务状态（已完成事项、待办事项、已有验证结果）
+        持久化保存至 SeekDB/PowerContext，供模块重启后的新实例读取并复用。
+        """
+        artifact_addr = (
+            str(
+                ArtifactAddress(
+                    scope_id=self.scope_id,
+                    artifact=ArtifactRef(family="task_state", artifact_id=task_id.lower(), revision=1),
+                )
+            )
+            if HAS_POWERCONTEXT
+            else f"task_state/{task_id.lower()}@v1"
+        )
+        metadata = {
+            "artifact_address": artifact_addr,
+            "completed_items": completed_items,
+            "todo_items": todo_items,
+            "verification_summary": verification_summary,
+            "saved_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        }
+        content = (
+            f"任务状态 [{task_id}] 关联规格={spec_id} | 已完成={','.join(completed_items)} | "
+            f"待办={','.join(todo_items)} | 验证结果={verification_summary}"
+        )
+        self.upsert_sdd_record(
+            record_id=f"STATE-{task_id}",
+            dimension="task_dependency",
+            spec_id=spec_id,
+            module_name="gateway.state",
+            title=f"{task_id} 持久化任务进展状态",
+            content=content,
+            metadata=metadata,
+        )
+        return {
+            "status": "saved",
+            "task_id": task_id,
+            "spec_id": spec_id,
+            "artifact_address": artifact_addr,
+            "state": metadata,
+        }
+
+    def load_task_state(self, task_id: str) -> Optional[Dict[str, Any]]:
+        """在上下文模块重启后（新实例中）读取已保存的任务状态并用于后续上下文装配"""
+        conn = self.get_conn()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT record_id, spec_id, title, content, metadata_json, powercontext_source_ref
+                    FROM minimax_sdd_context_store
+                    WHERE record_id = %s AND scope_id = %s
+                    """,
+                    (f"STATE-{task_id}", self.scope_id),
+                )
+                row = cur.fetchone()
+                if not row:
+                    return None
+                return {
+                    "task_id": task_id,
+                    "spec_id": row["spec_id"],
+                    "title": row["title"],
+                    "content": row["content"],
+                    "powercontext_source_ref": row["powercontext_source_ref"],
+                    "state": json.loads(row["metadata_json"]),
+                }
+        finally:
+            conn.close()
+
