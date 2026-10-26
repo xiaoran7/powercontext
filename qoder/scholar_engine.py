@@ -102,7 +102,7 @@ class ScholarPulseEngine:
             connect_timeout=10,
         )
 
-    def init_and_seed_seekdb(self) -> Dict[str, Any]:
+    def init_and_seed_seekdb(self, force_reset: bool = False) -> Dict[str, Any]:
         conn = self.get_conn()
         try:
             with conn.cursor() as cur:
@@ -125,9 +125,15 @@ class ScholarPulseEngine:
                     ) DEFAULT CHARSET=utf8mb4;
                 """)
 
-                cur.execute("SELECT COUNT(*) AS cnt FROM qoder_scholar_store;")
+                if force_reset:
+                    cur.execute("DELETE FROM qoder_scholar_store WHERE scope_id = %s;", (self.scope_id,))
+
+                cur.execute(
+                    "SELECT COUNT(*) AS cnt FROM qoder_scholar_store WHERE scope_id = %s AND topic != 'learner_memory';",
+                    (self.scope_id,),
+                )
                 cnt = cur.fetchone()["cnt"]
-                if cnt < len(DEFAULT_RESEARCH_CORPUS):
+                if cnt < len(DEFAULT_RESEARCH_CORPUS) or force_reset:
                     for item in DEFAULT_RESEARCH_CORPUS:
                         emb = _scholar_embedding(
                             f"{item['doc_id']} {item['paper_title']} {item['section']} {item['content']} {item['key_takeaway']}"
@@ -166,7 +172,10 @@ class ScholarPulseEngine:
                                 vec_str,
                             ),
                         )
-                cur.execute("SELECT COUNT(*) AS cnt FROM qoder_scholar_store;")
+                cur.execute(
+                    "SELECT COUNT(*) AS cnt FROM qoder_scholar_store WHERE scope_id = %s AND topic != 'learner_memory';",
+                    (self.scope_id,),
+                )
                 total = cur.fetchone()["cnt"]
         finally:
             conn.close()
@@ -177,6 +186,96 @@ class ScholarPulseEngine:
             "scope_id": self.scope_id,
             "total_sections": total,
         }
+
+    def save_learner_memory(
+        self,
+        learner_id: str,
+        weak_topics: List[str],
+        mastered_doc_ids: List[str],
+        preferred_depth: str = "deep-derivation",
+        review_note: str = "",
+    ) -> Dict[str, Any]:
+        """
+        使用 PowerContext 保存学习者的薄弱知识点、已掌握文献与复习偏好，持久化至 SeekDB 并在后续跨会话复习中复用。
+        """
+        doc_id = f"MEMORY-{learner_id}"
+        artifact_addr = (
+            str(
+                ArtifactAddress(
+                    scope_id=self.scope_id,
+                    artifact=ArtifactRef(family="learner_memory", artifact_id=learner_id.lower(), revision=1),
+                )
+            )
+            if HAS_POWERCONTEXT
+            else f"learner_memory/{learner_id}@v1"
+        )
+        payload = {
+            "learner_id": learner_id,
+            "weak_topics": weak_topics,
+            "mastered_doc_ids": mastered_doc_ids,
+            "preferred_depth": preferred_depth,
+            "review_note": review_note,
+            "artifact_address": artifact_addr,
+            "updated_at": int(time.time()),
+        }
+        content_text = (
+            f"学习者 {learner_id} 薄弱知识点：{', '.join(weak_topics)}；"
+            f"已掌握文献：{', '.join(mastered_doc_ids)}；偏好：{preferred_depth}；备注：{review_note}"
+        )
+        emb = _scholar_embedding(content_text)
+        vec_str = "[" + ",".join(f"{x:.6f}" for x in emb) + "]"
+        conn = self.get_conn()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO qoder_scholar_store
+                    (doc_id, scope_id, paper_title, section, topic, content, key_takeaway, flashcard_json, powercontext_source_ref, embedding)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ON DUPLICATE KEY UPDATE
+                        content = VALUES(content),
+                        key_takeaway = VALUES(key_takeaway),
+                        flashcard_json = VALUES(flashcard_json),
+                        powercontext_source_ref = VALUES(powercontext_source_ref),
+                        embedding = VALUES(embedding)
+                    """,
+                    (
+                        doc_id,
+                        self.scope_id,
+                        f"Learner Memory ({learner_id})",
+                        "PowerContext Persistent Study Profile",
+                        "learner_memory",
+                        content_text,
+                        review_note or f"优先强化 {', '.join(weak_topics)}",
+                        json.dumps(payload, ensure_ascii=False),
+                        artifact_addr,
+                        vec_str,
+                    ),
+                )
+        finally:
+            conn.close()
+        return {"status": "saved", "learner_id": learner_id, "memory": payload}
+
+    def get_learner_memory(self, learner_id: str) -> Optional[Dict[str, Any]]:
+        """从 SeekDB 读取持久化的学习者记忆（跨实例重启后可直接复用）。"""
+        doc_id = f"MEMORY-{learner_id}"
+        conn = self.get_conn()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT doc_id, content, flashcard_json, powercontext_source_ref
+                    FROM qoder_scholar_store
+                    WHERE scope_id = %s AND doc_id = %s AND topic = 'learner_memory'
+                    """,
+                    (self.scope_id, doc_id),
+                )
+                row = cur.fetchone()
+        finally:
+            conn.close()
+        if not row:
+            return None
+        return json.loads(row["flashcard_json"])
 
     def ingest_research_note(
         self,
@@ -238,7 +337,7 @@ class ScholarPulseEngine:
         emb = _scholar_embedding(query)
         vec_str = "[" + ",".join(f"{x:.6f}" for x in emb) + "]"
 
-        filters = ["scope_id = %s"]
+        filters = ["scope_id = %s", "topic != 'learner_memory'"]
         params_base: List[Any] = [self.scope_id]
         if topic:
             filters.append("topic = %s")
@@ -331,18 +430,30 @@ class ScholarPulseEngine:
         return results[:top_k]
 
     def build_research_brief_and_flashcards(
-        self, research_question: str, max_bytes: int = 1600
+        self,
+        research_question: str,
+        max_bytes: int = 1600,
+        learner_id: str = "default-scholar",
     ) -> Dict[str, Any]:
         """
-        结合 SeekDB 混合检索与 PowerContext 字节预算装配，
-        生成可溯源的文献精读简报（PreparedContext V1）、概念知识图谱边集与间隔复习闪卡。
+        结合 SeekDB 混合检索与 PowerContext 学习者记忆 + 字节预算装配，
+        生成可溯源的文献精读简报（PreparedContext V1）、概念知识图谱边集与自适应间隔复习闪卡。
         """
         hits = self.hybrid_search_papers(query=research_question, top_k=4)
+        learner_mem = self.get_learner_memory(learner_id)
+        weak_topics = learner_mem.get("weak_topics", []) if learner_mem else []
+        mastered_docs = set(learner_mem.get("mastered_doc_ids", [])) if learner_mem else set()
 
+        mem_line = (
+            f"learner_memory: id={learner_id} weak_topics={','.join(weak_topics) or 'none'}\n"
+            if learner_mem
+            else ""
+        )
         header = (
             "BEGIN_POWERCONTEXT_PREPARED_CONTEXT_V1\n"
             f"scope_id: {self.scope_id}\n"
             f"research_question: {research_question}\n"
+            f"{mem_line}"
             "evidence_spans:\n"
         )
         footer = "END_POWERCONTEXT_PREPARED_CONTEXT_V1\n"
@@ -370,10 +481,14 @@ class ScholarPulseEngine:
                         "end": end_pos,
                     }
                 )
+            is_weak = h["topic"] in weak_topics
+            is_mastered = h["doc_id"] in mastered_docs
             flashcards.append(
                 {
                     "doc_id": h["doc_id"],
                     "topic": h["topic"],
+                    "priority": "high_weak_topic" if is_weak else ("low_mastered" if is_mastered else "normal"),
+                    "mastered": is_mastered,
                     "question": h["flashcard"]["question"],
                     "answer": h["flashcard"]["answer"],
                 }
@@ -386,6 +501,10 @@ class ScholarPulseEngine:
                         "relation": f"synergizes_in({h['topic']})",
                     }
                 )
+
+        # 依据 PowerContext 学习者记忆，将薄弱知识点对应的闪卡优先置顶复习
+        priority_rank = {"high_weak_topic": 0, "normal": 1, "low_mastered": 2}
+        flashcards.sort(key=lambda c: priority_rank.get(c["priority"], 1))
 
         prepared_context = header + "".join(lines) + footer
         handoff_addr = (
@@ -401,6 +520,8 @@ class ScholarPulseEngine:
 
         record = {
             "research_question": research_question,
+            "learner_id": learner_id,
+            "reused_learner_memory": learner_mem,
             "prepared_context": prepared_context,
             "prepared_context_bytes": len(prepared_context.encode("utf-8")),
             "max_bytes": max_bytes,
