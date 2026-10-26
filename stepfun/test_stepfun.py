@@ -25,7 +25,7 @@ def test_stepfun_status_and_dual_indexes():
     assert any("FULLTEXT" in idx for idx in data["indexes"])
 
 
-def test_stepfun_insert_and_single_sql_hybrid_search():
+def test_stepfun_insert_and_in_seekdb_hybrid_search():
     collection = "pytest_stepfun_hybrid"
     docs = [
         {
@@ -60,16 +60,14 @@ def test_stepfun_insert_and_single_sql_hybrid_search():
         },
     ]
 
-    inserted_ids = []
-    for doc in docs:
-        r = client.post("/api/documents", json=doc)
-        assert r.status_code == 200
-        body = r.json()
-        assert body["status"] == "inserted"
-        assert body["collection_id"] == collection
-        inserted_ids.append(body["id"])
+    batch_resp = client.post(
+        "/api/documents/batch",
+        json={"collection_id": collection, "documents": docs},
+    )
+    assert batch_resp.status_code == 200
+    assert batch_resp.json()["count"] == 3
 
-    # 1. 测试混合检索（向量指向 doc[0]，但关键词包含 doc[1] 的 WebGPU ONNX，验证双通道同时召回并融合）
+    # 1. 验证完全在 SeekDB 内核完成的混合检索（ROW_NUMBER() + SUM(rrf_part) + GROUP BY id ORDER BY rrf_score DESC）
     search_resp = client.post(
         "/api/search",
         json={
@@ -85,11 +83,11 @@ def test_stepfun_insert_and_single_sql_hybrid_search():
     assert search_resp.status_code == 200
     sdata = search_resp.json()
     assert sdata["mode"] == "hybrid"
-    assert "SINGLE-SQL HYBRID" in sdata["executed_sql"]
+    assert "IN-SEEKDB HYBRID RRF" in sdata["executed_sql"]
     assert sdata["total_returned"] >= 2
     assert sdata["results"][0]["rrf_score"] > 0
 
-    # 2. 测试会话状态管理与索引刷新接口
+    # 2. 验证会话状态管理、索引刷新与 4 档量化基准测试结果
     sess_resp = client.get("/api/sessions/pytest-session-01")
     assert sess_resp.status_code == 200
     assert sess_resp.json()["turn_count"] >= 1
@@ -100,4 +98,4 @@ def test_stepfun_insert_and_single_sql_hybrid_search():
 
     bench_resp = client.get("/api/benchmark")
     assert bench_resp.status_code == 200
-    assert len(bench_resp.json()["quantization_comparison"]) == 3
+    assert len(bench_resp.json()["quantization_comparison"]) == 4

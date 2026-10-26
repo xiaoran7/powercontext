@@ -1,0 +1,13 @@
+{
+  "name": "stepfun-seekdb-webgpu-kb",
+  "version": "1.0.0",
+  "description": "Browser-side WebGPU/WASM Embedding + OceanBase SeekDB Hybrid Search (seekdb-js / mysql2 compatible)",
+  "type": "module",
+  "scripts": {
+    "start": "node server_seekdb_js.mjs"
+  },
+  "dependencies": {
+    "seekdb-js": "^0.1.0",
+    "mysql2": "^3.11.0"
+  }
+}
