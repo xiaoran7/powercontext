@@ -5,12 +5,6 @@ description: 周边去哪儿：基于高德开放平台 MCP Server 的周边地�
 
 # 周边去哪儿：基于高德的地点推荐助手 (Gaode Nearby Place Explorer)
 
-> **赛题归属**：2026 OceanBase 数据库大赛 · 高德地图生态赛题（20分）  
-> **官方题目**：周边去哪儿：基于高德的地点推荐助手  
-> **验证行**：`OB-P:xI1C-CXPJXT4ztVpZDY6_A`  
-
----
-
 ## 一、技能定位与适用场景
 
 - **技能名称**：`gaode-nearby-explorer`（周边去哪儿：基于高德的地点推荐助手）

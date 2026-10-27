@@ -4,8 +4,7 @@
 > **赛题编号**：大题 `600074` / 子题 `800511`（周边去哪儿：基于高德的地点推荐助手 `gaode-nearby-explorer`）  
 > **代码仓库**：`https://github.com/xiaoran7/powercontext.git`  
 > **提测分支**：`2026-competition-ecosystem`  
-> **题目目录**：`gaode/`  
-> **参赛队伍验证行**：`OB-P:xI1C-CXPJXT4ztVpZDY6_A`  
+> **题目目录**：`gaode/` 及仓库根目录 `SKILL.md`  
 
 ---
 
@@ -21,7 +20,7 @@
 | 文件 | 作用与规范对照 |
 | :--- | :--- |
 | [`SKILL.md`](./SKILL.md) | **核心提交产物**：符合标准 Agent Skill 规范的周边地点推荐助手指令集，包含 YAML Frontmatter 元数据、核心工具说明、四步推荐工作流、结构化总览表格/分项卡片格式、以及未核实/宁缺毋滥/服务降级准则。 |
-| [`README.md`](./README.md) | 本说明文档：包含赛题说明、验证行、技术特性解析与本地评测校验指南。 |
+| [`README.md`](./README.md) | 本说明文档：包含赛题说明、技术特性解析与本地评测校验指南。 |
 | [`test_gaode_skill.py`](./test_gaode_skill.py) | **本地自动化合规测试套件**：涵盖 Frontmatter 格式、必备高德 MCP 工具调用、四步工作流、硬性时间过滤、偏好排序、以及异常处理规则全覆盖验证。 |
 
 ---
@@ -92,5 +91,4 @@ pytest -v test_gaode_skill.py
 - [x] 软性属性（“未核实”）免责标注校验
 - [x] 排序逻辑与推荐理由说明校验
 - [x] 结果不足（“宁缺毋滥”）与零结果兜底校验
-- [x] 参赛队伍唯一验证标识（`OB-P:xI1C-CXPJXT4ztVpZDY6_A`）校验
 - [x] 模拟步行数据过滤与排序算法数学正确性校验

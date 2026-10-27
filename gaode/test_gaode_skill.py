@@ -2,49 +2,52 @@ from pathlib import Path
 
 
 def test_gaode_skill_structure_and_rules():
-    skill_path = Path(__file__).parent / "SKILL.md"
-    assert skill_path.exists(), "gaode/SKILL.md must exist"
-    content = skill_path.read_text(encoding="utf-8")
+    gaode_skill = Path(__file__).parent / "SKILL.md"
+    root_skill = Path(__file__).parent.parent / "SKILL.md"
 
-    # 1. YAML Frontmatter 校验
-    assert content.startswith("---\n")
-    assert "name: gaode-nearby-explorer" in content
-    assert "description:" in content
+    assert gaode_skill.exists(), "gaode/SKILL.md must exist"
+    assert root_skill.exists(), "powercontext/SKILL.md (root) must exist"
 
-    # 2. 必备高德 MCP 工具与四步工作流校验
-    required_tools = [
-        "maps_around_search",
-        "maps_text_search",
-        "maps_direction_walking",
-        "maps_geo",
-    ]
-    for tool in required_tools:
-        assert tool in content, f"Missing required AMap MCP tool: {tool}"
+    for skill_path in [gaode_skill, root_skill]:
+        content = skill_path.read_text(encoding="utf-8")
 
-    # 3. 核心过滤、排序、输出结构与异常兜底校验
-    required_rules = [
-        "<= 15 分钟",
-        "未核实",
-        "推荐理由",
-        "宁缺毋滥",
-        "OB-P:xI1C-CXPJXT4ztVpZDY6_A",
-        "地点名称",
-        "详细地址",
-        "预计步行距离",
-        "预计步行时间",
-    ]
-    for rule in required_rules:
-        assert rule in content, f"Missing required rule or verification line: {rule}"
+        # 1. YAML Frontmatter 校验
+        assert content.startswith("---\n")
+        assert "name: gaode-nearby-explorer" in content
+        assert "description:" in content
+
+        # 2. 必备高德 MCP 工具与四步工作流校验
+        required_tools = [
+            "maps_around_search",
+            "maps_text_search",
+            "maps_direction_walking",
+            "maps_geo",
+        ]
+        for tool in required_tools:
+            assert tool in content, f"Missing required AMap MCP tool: {tool}"
+
+        # 3. 核心过滤、排序、输出结构与异常兜底校验
+        required_rules = [
+            "<= 15 分钟",
+            "未核实",
+            "推荐理由",
+            "宁缺毋滥",
+            "地点名称",
+            "详细地址",
+            "预计步行距离",
+            "预计步行时间",
+        ]
+        for rule in required_rules:
+            assert rule in content, f"Missing required rule: {rule}"
 
 
-def test_gaode_readme_and_verification_token():
+def test_gaode_readme():
     readme_path = Path(__file__).parent / "README.md"
     assert readme_path.exists(), "gaode/README.md must exist"
     content = readme_path.read_text(encoding="utf-8")
 
     assert "800511" in content
     assert "600074" in content
-    assert "OB-P:xI1C-CXPJXT4ztVpZDY6_A" in content
     assert "gaode-nearby-explorer" in content
 
 
