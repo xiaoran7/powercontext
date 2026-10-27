@@ -21,7 +21,7 @@
 
 1. **接入方式**：提供两套等价服务端，均通过官方 seekdb-js 生态接入 MySQL 协议：
    - `server.py`（Python / pymysql，`http://127.0.0.1:8088`）
-   - [`server_seekdb_js.mjs`](../server_seekdb_js.mjs)（**官方 npm 包 `seekdb` 的 `SeekdbClient`**，`http://127.0.0.1:8089`）
+   - [`server_seekdb_js.mjs`](./server_seekdb_js.mjs)（**官方 npm 包 `seekdb` 的 `SeekdbClient`**，`http://127.0.0.1:8089`）
    > 题面写的 `seekdb-js` 即该 SDK 的项目名，npm 发布的包名为 `seekdb`（旧包名 `seekdb-js` 已于 2025-12-05 下架）。
 2. **表结构与索引**：`stepfun_knowledge_base` 保存 `title`、`content`、`category`、`collection_id`、`embedding VECTOR(512)`、`quant_mode`、`device_source`、`client_ms`，并建立
    - `VECTOR INDEX idx_stepfun_hnsw (embedding) WITH (distance=cosine, type=hnsw, lib=vsag)`
