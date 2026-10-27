@@ -7,7 +7,7 @@ from sdd_engine import MiniMaxSDDContextEngine
 app = FastAPI(
     title="MiniMax × OceanBase SeekDB × PowerContext SDD 上下文管理系统",
     description="2026 OceanBase AI 数据库大赛 - MiniMax 赛题交付系统 (OB-P:xI1C-CXPJXT4ztVpZDY6_A)",
-    version="1.1.0",
+    version="1.2.0",
 )
 
 engine = MiniMaxSDDContextEngine()
@@ -17,7 +17,7 @@ class SDDQueryRequest(BaseModel):
     query_type: int = Field(..., ge=1, le=5, description="核心查询编号 (1~5)")
     target: str = Field("SPEC-GW-02", description="目标 Spec ID / 模块名 / 决策问题")
     task_id: Optional[str] = Field("TASK-GW-102", description="任务 ID（用于查询 5）")
-    max_bytes: int = Field(1800, ge=400, le=8000, description="PreparedContext 字节预算")
+    max_bytes: int = Field(2400, ge=400, le=8000, description="PreparedContext 字节预算")
 
 
 class SDDUpsertRequest(BaseModel):
@@ -36,6 +36,12 @@ class SDDTaskStateSaveRequest(BaseModel):
     completed_items: List[str]
     todo_items: List[str]
     verification_summary: str
+
+
+class SDDApplyRequest(BaseModel):
+    task_id: str = "TASK-GW-102"
+    spec_id: str = "SPEC-GW-02"
+    auto_test: bool = True
 
 
 @app.get("/api/sdd/status")
@@ -99,6 +105,16 @@ def execute_sdd_query(req: SDDQueryRequest):
         task_id=req.task_id or "TASK-GW-102",
         spec_id=req.target,
         max_bytes=req.max_bytes,
+    )
+
+
+@app.post("/api/sdd/apply")
+def apply_sdd_patch_endpoint(req: SDDApplyRequest):
+    engine.init_and_seed_seekdb()
+    return engine.apply_minimax_code_patch(
+        task_id=req.task_id,
+        spec_id=req.spec_id,
+        auto_test=req.auto_test,
     )
 
 

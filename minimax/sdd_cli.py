@@ -1,6 +1,13 @@
 import argparse
 import json
+import sys
 from sdd_engine import MiniMaxSDDContextEngine
+
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 
 def main():
@@ -9,7 +16,7 @@ def main():
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    init_parser = sub.add_parser("init", help="初始化或重置远端 SeekDB 六大 SDD 上下文维度表与基准数据")
+    init_parser = sub.add_parser("init", help="初始化或重置 SeekDB 六大 SDD 上下文维度表与基准数据")
     init_parser.add_argument("--reset", action="store_true", help="清空并恢复初始状态")
 
     sub.add_parser("demo", help="一键执行完整 SDD 闭环演示（初始化 + 五大核心查询 + 状态复用 + 目标项目验收回写）")
@@ -23,7 +30,12 @@ def main():
     )
     q_parser.add_argument("--target", default="SPEC-GW-02", help="查询目标 Spec ID、模块名或问题")
     q_parser.add_argument("--task-id", default="TASK-GW-102", help="用于查询 5 的任务 ID")
-    q_parser.add_argument("--max-bytes", type=int, default=1800, help="PreparedContext UTF-8 字节预算")
+    q_parser.add_argument("--max-bytes", type=int, default=2400, help="PreparedContext UTF-8 字节预算")
+
+    apply_parser = sub.add_parser("apply", help="将装配好的 SDD 上下文提供给 MiniMax 开发助手完成代码修改与测试验收")
+    apply_parser.add_argument("--task-id", default="TASK-GW-102", help="任务 ID")
+    apply_parser.add_argument("--target", default="SPEC-GW-02", help="目标 Spec ID")
+    apply_parser.add_argument("--no-test", action="store_true", help="跳过自动单元测试门禁")
 
     args = parser.parse_args()
     engine = MiniMaxSDDContextEngine()
@@ -46,6 +58,14 @@ def main():
                 task_id=args.task_id, spec_id=args.target, max_bytes=args.max_bytes
             )
         print(json.dumps(out, ensure_ascii=False, indent=2))
+    elif args.command == "apply":
+        engine.init_and_seed_seekdb()
+        out = engine.apply_minimax_code_patch(
+            task_id=args.task_id,
+            spec_id=args.target,
+            auto_test=not args.no_test,
+        )
+        print(json.dumps(out, ensure_ascii=False, indent=2))
     elif args.command == "demo":
         init_res = engine.init_and_seed_seekdb(force_reset=True)
         q1 = engine.query_1_spec_location_and_status("SPEC-GW-02")
@@ -61,8 +81,8 @@ def main():
         )
         restarted_engine = MiniMaxSDDContextEngine()
         reused_state = restarted_engine.load_task_state("TASK-GW-102")
-        q5 = restarted_engine.query_5_assemble_task_context_pack("TASK-GW-102", "SPEC-GW-02", max_bytes=1800)
-        verify_res = restarted_engine.verify_target_project_and_sync_seekdb()
+        q5 = restarted_engine.query_5_assemble_task_context_pack("TASK-GW-102", "SPEC-GW-02", max_bytes=2400)
+        apply_res = restarted_engine.apply_minimax_code_patch("TASK-GW-102", "SPEC-GW-02", auto_test=True)
         summary = {
             "init": init_res,
             "query_1_spec_location": q1,
@@ -71,7 +91,7 @@ def main():
             "query_4_pitfalls": q4,
             "reused_task_state_after_restart": reused_state,
             "query_5_prepared_context": q5,
-            "target_project_verification": verify_res,
+            "minimax_apply_code_modification": apply_res,
         }
         print(json.dumps(summary, ensure_ascii=False, indent=2))
 

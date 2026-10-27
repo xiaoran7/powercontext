@@ -1,6 +1,8 @@
+# MiniMax SDD 上下文管理系统依赖清单
 fastapi>=0.110.0
 uvicorn>=0.29.0
 pymysql>=1.1.0
 httpx>=0.27.0
 pydantic>=2.6.0
 pytest>=8.0.0
+# 本地工程依赖：powercontext（上级仓库源码根目录自带，代码中已通过 sys.path 自动加载）
