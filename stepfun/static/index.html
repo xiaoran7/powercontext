@@ -489,6 +489,14 @@
           <span>⚡</span> 端侧推理设备与 SeekDB 实时状态
         </div>
         <div style="display: flex; gap: 8px;">
+          <select id="model-dtype" class="btn btn-outline btn-sm" style="width: auto; padding: 6px 10px;" title="端侧模型量化精度（切换后重新加载模型）">
+            <option value="q8">INT8 (q8)</option>
+            <option value="fp16">FP16</option>
+            <option value="fp32">FP32</option>
+          </select>
+          <a class="btn btn-outline btn-sm" href="/bench" target="_blank" rel="noopener">
+            <span>📊</span> 量化与检索质量实测
+          </a>
           <button id="btn-preload" class="btn btn-outline btn-sm">
             <span>📦</span> 一键装载竞赛测试数据集 (4 条)
           </button>
@@ -641,6 +649,9 @@
     // 全局状态
     let embedPipeline = null;
     let currentDevice = 'wasm';
+    // 默认精度随推理后端选择：实测 WebGPU 下 INT8 动态量化的检索质量与吞吐明显劣于 FP16
+    // （见 REPORT.md 第四节），因此 WebGPU 默认 FP16、WASM 默认 INT8；用户可随时切换。
+    let currentDtype = localStorage.getItem('stepfun_dtype') || null;
     let gpuInfo = 'CPU (WebAssembly)';
     const MODEL_ID = 'Xenova/bge-small-zh-v1.5';
 
@@ -696,14 +707,16 @@
       logAudit(`WebGPU 未启用或不支持，自动降级至 WebAssembly (WASM) 运行`, 'warning');
     }
 
-    // 2. 初始化端侧模型 Pipeline
+    // 2. 初始化端侧模型 Pipeline（device 与 dtype 都显式传入，
+    //    保证界面显示的量化精度就是实际加载的模型文件）
     async function initEmbeddingPipeline() {
       modelProgressBox.style.display = 'block';
-      logAudit(`开始初始化端侧模型: ${MODEL_ID} (推理设备: ${currentDevice})...`, 'highlight');
+      logAudit(`开始初始化端侧模型: ${MODEL_ID} (推理设备: ${currentDevice}, 量化精度: ${currentDtype})...`, 'highlight');
 
       try {
         embedPipeline = await pipeline('feature-extraction', MODEL_ID, {
           device: currentDevice,
+          dtype: currentDtype,
           progress_callback: (p) => {
             if (p.status === 'progress') {
               const pct = Math.round(p.progress || 0);
@@ -717,7 +730,7 @@
         });
 
         modelProgressBox.style.display = 'none';
-        logAudit(`端侧模型 ${MODEL_ID} 就绪！512 维稠密特征提取已完成端侧绑定。`, 'success');
+        logAudit(`端侧模型 ${MODEL_ID} 就绪！精度 ${currentDtype}，512 维稠密特征提取已完成端侧绑定。`, 'success');
       } catch (err) {
         console.error("端侧模型加载失败:", err);
         // 如果 WebGPU 失败，二次尝试强制降级 WASM
@@ -725,16 +738,30 @@
           logAudit(`WebGPU 执行管线异常，正在降级为 WASM 重新加载...`, 'warning');
           currentDevice = 'wasm';
           statDevice.textContent = 'WASM 强制降级';
-          embedPipeline = await pipeline('feature-extraction', MODEL_ID, { device: 'wasm' });
+          embedPipeline = await pipeline('feature-extraction', MODEL_ID, { device: 'wasm', dtype: currentDtype });
           modelProgressBox.style.display = 'none';
-          logAudit(`WASM 降级加载成功！`, 'success');
+          logAudit(`WASM 降级加载成功（精度 ${currentDtype}）！`, 'success');
         } else {
           logAudit(`模型加载失败: ${err.message}`, 'warning');
         }
       }
     }
 
-    // 3. 核心计算：浏览器端侧推理生成 384 维向量
+    // 量化精度切换：重新加载对应 ONNX 变体
+    const dtypeSelect = document.getElementById('model-dtype');
+    function resolveDefaultDtype() {
+      if (currentDtype) return currentDtype;
+      return currentDevice === 'webgpu' ? 'fp16' : 'q8';
+    }
+    dtypeSelect.addEventListener('change', async () => {
+      currentDtype = dtypeSelect.value;
+      localStorage.setItem('stepfun_dtype', currentDtype);
+      embedPipeline = null;
+      logAudit(`切换端侧模型量化精度为 ${currentDtype}，重新加载权重...`, 'highlight');
+      await initEmbeddingPipeline();
+    });
+
+    // 3. 核心计算：浏览器端侧推理生成 512 维向量
     async function computeEmbeddingInBrowser(text) {
       if (!embedPipeline) {
         throw new Error("端侧模型尚未初始化完成，请稍候！");
@@ -798,6 +825,7 @@
             content,
             embedding: vector,
             device_source: currentDevice,
+            quant_mode: currentDtype,
             client_ms: clientMs
           })
         });
@@ -959,11 +987,12 @@
               content: doc.content,
               embedding: vector,
               device_source: currentDevice,
+              quant_mode: currentDtype,
               client_ms: clientMs
             })
           });
         }
-        logAudit(`4 条竞赛基准数据集已全部通过端侧 WebGPU 向量化并录入 SeekDB！`, 'success');
+        logAudit(`4 条竞赛基准数据集已全部通过端侧 ${currentDevice.toUpperCase()} (${currentDtype}) 向量化并录入 SeekDB！`, 'success');
         refreshStatus();
         performSearch();
       } catch (err) {
@@ -1001,6 +1030,8 @@
     // 启动初始化流程
     (async () => {
       await initHardwareDetection();
+      currentDtype = resolveDefaultDtype();
+      dtypeSelect.value = currentDtype;
       await refreshStatus();
       await initEmbeddingPipeline();
     })();

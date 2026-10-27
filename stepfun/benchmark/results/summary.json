@@ -1,0 +1,69 @@
+{
+  "model": "Xenova/bge-small-zh-v1.5",
+  "top_k": 5,
+  "corpus_size": 48,
+  "query_count": 30,
+  "started_at": "2026-10-27T13:55:59.360Z",
+  "finished_at": "2026-10-27T13:57:11.497Z",
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+  "webgpu_available": true,
+  "raw_file": "raw-20261027T215711.json",
+  "runs": [
+    {
+      "label": "INT8 (q8) + WEBGPU",
+      "device": "webgpu",
+      "dtype": "q8",
+      "model_size_mb": 22.9,
+      "cold_load_ms": 13981.7,
+      "throughput_docs_per_sec": 10.7,
+      "embed_p50_ms": 90.65,
+      "seekdb_p50_ms": 21.49,
+      "seekdb_p90_ms": 38.36,
+      "e2e_p50_ms": 96.3,
+      "recall_at_5": 0.7667,
+      "ndcg_at_5": 0.6749
+    },
+    {
+      "label": "FP16 + WEBGPU",
+      "device": "webgpu",
+      "dtype": "fp16",
+      "model_size_mb": 45.3,
+      "cold_load_ms": 14218.5,
+      "throughput_docs_per_sec": 103.4,
+      "embed_p50_ms": 7.7,
+      "seekdb_p50_ms": 26.09,
+      "seekdb_p90_ms": 38.51,
+      "e2e_p50_ms": 37.55,
+      "recall_at_5": 0.9667,
+      "ndcg_at_5": 0.9377
+    },
+    {
+      "label": "FP32 + WEBGPU",
+      "device": "webgpu",
+      "dtype": "fp32",
+      "model_size_mb": 90.46,
+      "cold_load_ms": 27967.1,
+      "throughput_docs_per_sec": 136.4,
+      "embed_p50_ms": 7.35,
+      "seekdb_p50_ms": 24.03,
+      "seekdb_p90_ms": 40.2,
+      "e2e_p50_ms": 35.5,
+      "recall_at_5": 0.9667,
+      "ndcg_at_5": 0.9377
+    },
+    {
+      "label": "INT8 (q8) + WASM",
+      "device": "wasm",
+      "dtype": "q8",
+      "model_size_mb": 22.9,
+      "cold_load_ms": 82,
+      "throughput_docs_per_sec": 33.6,
+      "embed_p50_ms": 30.15,
+      "seekdb_p50_ms": 27.71,
+      "seekdb_p90_ms": 38.58,
+      "e2e_p50_ms": 41.85,
+      "recall_at_5": 0.9667,
+      "ndcg_at_5": 0.9377
+    }
+  ]
+}

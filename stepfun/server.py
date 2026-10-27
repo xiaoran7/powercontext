@@ -1,3 +1,4 @@
+import json
 import os
 import time
 from typing import Dict, List, Optional
@@ -28,7 +29,7 @@ SESSION_STORE: Dict[str, List[dict]] = {}
 
 def get_db_conn():
     try:
-        return pymysql.connect(
+        conn = pymysql.connect(
             host=SEEKDB.host,
             port=SEEKDB.port,
             user=SEEKDB.user,
@@ -39,6 +40,12 @@ def get_db_conn():
             autocommit=True,
             connect_timeout=10,
         )
+        # seekdb 默认 ob_query_timeout 只有 10s，批量写入与索引构建容易触顶
+        with conn.cursor() as cur:
+            cur.execute("SET SESSION ob_query_timeout = 600000000")
+            cur.execute("SET SESSION net_read_timeout = 600")
+            cur.execute("SET SESSION net_write_timeout = 600")
+        return conn
     except pymysql.err.OperationalError as e:
         raise HTTPException(
             status_code=503,
@@ -269,14 +276,17 @@ def insert_documents_batch(req: BatchDocumentInsertReq):
     conn = get_db_conn()
     try:
         with conn.cursor() as cur:
-            cur.executemany(
-                """
-                INSERT INTO stepfun_knowledge_base
-                (title, content, category, collection_id, embedding, quant_mode, device_source, client_ms)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                """,
-                rows_to_insert,
-            )
+            # 分块写入：单次 executemany 过大时，向量索引的增量构建会拖长单条语句耗时
+            chunk_size = 16
+            for i in range(0, len(rows_to_insert), chunk_size):
+                cur.executemany(
+                    """
+                    INSERT INTO stepfun_knowledge_base
+                    (title, content, category, collection_id, embedding, quant_mode, device_source, client_ms)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    rows_to_insert[i : i + chunk_size],
+                )
     finally:
         conn.close()
 
@@ -541,70 +551,72 @@ def clear_session_context(session_id: str):
 
 @app.get("/api/benchmark")
 def get_quantization_and_hybrid_benchmark():
-    """返回符合赛题 3.2 节表格规范的端侧模型量化对比、压缩比与 SeekDB 混合检索实测数据"""
-    return {
-        "model": "Xenova/bge-small-zh-v1.5 (ONNX Runtime Web v1.20 / Transformers.js v3.3.3)",
-        "embedding_dim": EMBEDDING_DIM,
-        "quantization_comparison": [
-            {
-                "config": "量化前基线 (FP32 + WebGPU)",
-                "quant_mode": "fp32",
-                "model_size_mb": 94.8,
-                "compression_ratio": "1.00x",
-                "cold_load_ms": 1650,
-                "warm_embed_ms": 15.2,
-                "throughput_docs_per_sec": 65.8,
-                "seekdb_hybrid_ms": 11.4,
-                "e2e_query_ms": 27.8,
-                "recall_at_5": 0.98,
-                "ndcg_at_5": 0.954,
-            },
-            {
-                "config": "INT8 (q8) + WebGPU (默认推荐)",
-                "quant_mode": "q8",
-                "model_size_mb": 24.2,
-                "compression_ratio": "3.92x",
-                "cold_load_ms": 480,
-                "warm_embed_ms": 6.8,
-                "throughput_docs_per_sec": 147.1,
-                "seekdb_hybrid_ms": 11.4,
-                "e2e_query_ms": 19.8,
-                "recall_at_5": 0.96,
-                "ndcg_at_5": 0.941,
-            },
-            {
-                "config": "FP16 + WebGPU",
-                "quant_mode": "fp16",
-                "model_size_mb": 47.6,
-                "compression_ratio": "1.99x",
-                "cold_load_ms": 890,
-                "warm_embed_ms": 9.5,
-                "throughput_docs_per_sec": 105.3,
-                "seekdb_hybrid_ms": 11.4,
-                "e2e_query_ms": 22.1,
-                "recall_at_5": 0.98,
-                "ndcg_at_5": 0.952,
-            },
-            {
-                "config": "INT8 (q8) + WASM (自动降级路径)",
-                "quant_mode": "q8_wasm",
-                "model_size_mb": 24.2,
-                "compression_ratio": "3.92x",
-                "cold_load_ms": 520,
-                "warm_embed_ms": 18.4,
-                "throughput_docs_per_sec": 54.3,
-                "seekdb_hybrid_ms": 11.4,
-                "e2e_query_ms": 31.5,
-                "recall_at_5": 0.96,
-                "ndcg_at_5": 0.941,
-            },
-        ],
-        "retrieval_mode_comparison": [
-            {"mode": "SeekDB In-DB Hybrid (HNSW + Fulltext SQL RRF)", "recall_at_1": 0.92, "recall_at_5": 0.98, "ndcg_at_5": 0.952, "avg_seekdb_ms": 11.4},
-            {"mode": "SeekDB Vector-Only (VSAG HNSW)", "recall_at_1": 0.84, "recall_at_5": 0.92, "ndcg_at_5": 0.884, "avg_seekdb_ms": 8.7},
-            {"mode": "SeekDB Fulltext-Only (BM25 IK)", "recall_at_1": 0.76, "recall_at_5": 0.86, "ndcg_at_5": 0.812, "avg_seekdb_ms": 6.2},
-        ],
+    """返回浏览器实测的量化对比与检索质量结果。
+
+    数据来自前端「量化与检索质量实测」页（/bench）在真实浏览器中的运行，
+    由 `/api/benchmark/save` 落盘到 `benchmark/results/`，本接口原样读取，
+    不在服务端编造任何数字。尚未运行过实测时返回 measured=false。
+    """
+    summary_path = os.path.join(os.path.dirname(__file__), "benchmark", "results", "summary.json")
+    if not os.path.exists(summary_path):
+        return {
+            "measured": False,
+            "model": "Xenova/bge-small-zh-v1.5",
+            "note": "尚未运行实测。请在浏览器打开 /bench 执行「量化与检索质量实测」。",
+            "runs": [],
+        }
+    try:
+        with open(summary_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception as e:
+        return {"measured": False, "note": f"读取实测结果失败：{e}", "runs": []}
+    data["measured"] = True
+    return data
+
+
+@app.post("/api/benchmark/save")
+def save_benchmark_result(payload: dict):
+    """保存 /bench 页面在浏览器中实测得到的原始结果。"""
+    runs = payload.get("runs") if isinstance(payload, dict) else None
+    if not runs:
+        raise HTTPException(status_code=400, detail="结果为空，拒绝保存")
+
+    results_dir = os.path.join(os.path.dirname(__file__), "benchmark", "results")
+    os.makedirs(results_dir, exist_ok=True)
+    stamp = time.strftime("%Y%m%dT%H%M%S")
+    raw_path = os.path.join(results_dir, f"raw-{stamp}.json")
+    with open(raw_path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+
+    summary_keys = (
+        "label",
+        "device",
+        "dtype",
+        "model_size_mb",
+        "cold_load_ms",
+        "throughput_docs_per_sec",
+        "embed_p50_ms",
+        "seekdb_p50_ms",
+        "seekdb_p90_ms",
+        "e2e_p50_ms",
+        "recall_at_5",
+        "ndcg_at_5",
+    )
+    summary = {
+        "model": payload.get("model"),
+        "top_k": payload.get("top_k"),
+        "corpus_size": payload.get("corpus_size"),
+        "query_count": payload.get("query_count"),
+        "started_at": payload.get("started_at"),
+        "finished_at": payload.get("finished_at"),
+        "user_agent": payload.get("user_agent"),
+        "webgpu_available": payload.get("webgpu_available"),
+        "raw_file": os.path.basename(raw_path),
+        "runs": [{k: r.get(k) for k in summary_keys} for r in runs],
     }
+    with open(os.path.join(results_dir, "summary.json"), "w", encoding="utf-8") as f:
+        json.dump(summary, f, ensure_ascii=False, indent=2)
+    return {"saved": True, "raw": os.path.basename(raw_path), "summary": "summary.json"}
 
 
 @app.post("/api/reset")
@@ -620,13 +632,20 @@ def reset_table():
 
 
 static_dir = os.path.join(os.path.dirname(__file__), "static")
+bench_dir = os.path.join(os.path.dirname(__file__), "benchmark")
 os.makedirs(static_dir, exist_ok=True)
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
+app.mount("/benchmark", StaticFiles(directory=bench_dir), name="benchmark")
 
 
 @app.get("/")
 def index():
     return FileResponse(os.path.join(static_dir, "index.html"))
+
+
+@app.get("/bench")
+def bench_page():
+    return FileResponse(os.path.join(bench_dir, "bench.html"))
 
 
 if __name__ == "__main__":

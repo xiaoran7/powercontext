@@ -1,0 +1,3216 @@
+{
+  "model": "Xenova/bge-small-zh-v1.5",
+  "top_k": 5,
+  "corpus_size": 48,
+  "query_count": 30,
+  "started_at": "2026-10-27T13:55:59.360Z",
+  "finished_at": "2026-10-27T13:57:11.497Z",
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+  "webgpu_available": true,
+  "runs": [
+    {
+      "label": "INT8 (q8) + WEBGPU",
+      "device": "webgpu",
+      "dtype": "q8",
+      "model_size_mb": 22.9,
+      "cold_load_ms": 13981.7,
+      "download_ms": 10849.9,
+      "init_ms": 3131.8,
+      "warmup_ms": 640.5,
+      "embed_total_ms": 4494.1,
+      "throughput_docs_per_sec": 10.7,
+      "embed_p50_ms": 90.65,
+      "seekdb_p50_ms": 21.49,
+      "seekdb_p90_ms": 38.36,
+      "e2e_p50_ms": 96.3,
+      "recall_at_5": 0.7667,
+      "ndcg_at_5": 0.6749,
+      "per_query": [
+        {
+          "query_id": "q-01",
+          "query": "SeekDB 的向量索引用的是哪个引擎？",
+          "relevant": [
+            "VSAG HNSW 向量索引"
+          ],
+          "ranked": [
+            "Delta HNSW 与 Snapshot HNSW",
+            "VSAG HNSW 向量索引",
+            "PreparedContext 装配",
+            "SeekDB 定位与嵌入式部署",
+            "Recall@K 指标"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 0.6309,
+          "query_embed_ms": 69.8,
+          "seekdb_search_ms": 46.93,
+          "e2e_ms": 122.1,
+          "rrf_scores": [
+            0.03202,
+            0.03202,
+            0.03083,
+            0.03058,
+            0.02942
+          ]
+        },
+        {
+          "query_id": "q-02",
+          "query": "增量索引和基线索引是怎么配合的？",
+          "relevant": [
+            "Delta HNSW 与 Snapshot HNSW"
+          ],
+          "ranked": [
+            "索引刷新后可见",
+            "索引刷新与可见性",
+            "增量导入与集合切换",
+            "VSAG HNSW 向量索引",
+            "上下文增量传输"
+          ],
+          "recall_at_5": 0,
+          "ndcg_at_5": 0,
+          "query_embed_ms": 71.9,
+          "seekdb_search_ms": 43.25,
+          "e2e_ms": 120,
+          "rrf_scores": [
+            0.03202,
+            0.03102,
+            0.03041,
+            0.02942,
+            0.02942
+          ]
+        },
+        {
+          "query_id": "q-03",
+          "query": "中文全文检索用什么分词器？",
+          "relevant": [
+            "IK 中文分词全文索引"
+          ],
+          "ranked": [
+            "IK 中文分词全文索引",
+            "RRF 倒数排名融合",
+            "证据页检索",
+            "库内单 SQL 混合检索",
+            "混合检索的动机"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 72.3,
+          "seekdb_search_ms": 25.4,
+          "e2e_ms": 102.9,
+          "rrf_scores": [
+            0.03252,
+            0.03252,
+            0.03125,
+            0.03008,
+            0.02996
+          ]
+        },
+        {
+          "query_id": "q-04",
+          "query": "标量条件和向量距离怎么一起下推？",
+          "relevant": [
+            "单阶段标量过滤下推"
+          ],
+          "ranked": [
+            "单阶段标量过滤下推",
+            "VSAG HNSW 向量索引",
+            "索引刷新后可见",
+            "索引刷新与可见性",
+            "禁用云端推理"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 71,
+          "seekdb_search_ms": 18.86,
+          "e2e_ms": 94.5,
+          "rrf_scores": [
+            0.03252,
+            0.02976,
+            0.02971,
+            0.02904,
+            0.02798
+          ]
+        },
+        {
+          "query_id": "q-05",
+          "query": "数据库的 Fork 沙箱是怎么工作的？",
+          "relevant": [
+            "Fork Diff Merge 数据工作流"
+          ],
+          "ranked": [
+            "服务端不可用时的降级",
+            "bge-small-zh 模型",
+            "环境变量配置",
+            "候选集扩召回",
+            "Candidate 审核晋升"
+          ],
+          "recall_at_5": 0,
+          "ndcg_at_5": 0,
+          "query_embed_ms": 72.4,
+          "seekdb_search_ms": 18.8,
+          "e2e_ms": 95.2,
+          "rrf_scores": [
+            0.03175,
+            0.02921,
+            0.02822,
+            0.02778,
+            0.02722
+          ]
+        },
+        {
+          "query_id": "q-06",
+          "query": "官方 JavaScript SDK 的包名和入口类是什么？",
+          "relevant": [
+            "seekdb-js 官方 SDK"
+          ],
+          "ranked": [
+            "Recall@K 指标",
+            "Delta HNSW 与 Snapshot HNSW",
+            "Source 证据源",
+            "Fork Diff Merge 数据工作流",
+            "bge-small-zh 模型"
+          ],
+          "recall_at_5": 0,
+          "ndcg_at_5": 0,
+          "query_embed_ms": 73.1,
+          "seekdb_search_ms": 19.42,
+          "e2e_ms": 97.2,
+          "rrf_scores": [
+            0.03125,
+            0.03105,
+            0.0308,
+            0.02964,
+            0.02921
+          ]
+        },
+        {
+          "query_id": "q-07",
+          "query": "内存小的机器启动数据库要设置哪些参数？",
+          "relevant": [
+            "seekdb 资源参数"
+          ],
+          "ranked": [
+            "Delta HNSW 与 Snapshot HNSW",
+            "服务端不可用时的降级",
+            "Candidate 审核晋升",
+            "禁用云端推理",
+            "提测平台与执行失败"
+          ],
+          "recall_at_5": 0,
+          "ndcg_at_5": 0,
+          "query_embed_ms": 81.7,
+          "seekdb_search_ms": 22.65,
+          "e2e_ms": 109,
+          "rrf_scores": [
+            0.03151,
+            0.03078,
+            0.02762,
+            0.0274,
+            0.01639
+          ]
+        },
+        {
+          "query_id": "q-08",
+          "query": "RRF 融合公式里的 k 一般取多少？",
+          "relevant": [
+            "RRF 倒数排名融合"
+          ],
+          "ranked": [
+            "RRF 倒数排名融合",
+            "Recall@K 指标",
+            "Delta HNSW 与 Snapshot HNSW",
+            "PreparedContext 装配",
+            "bge-small-zh 模型"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 67.9,
+          "seekdb_search_ms": 36.33,
+          "e2e_ms": 108.2,
+          "rrf_scores": [
+            0.03279,
+            0.032,
+            0.03128,
+            0.02963,
+            0.02885
+          ]
+        },
+        {
+          "query_id": "q-09",
+          "query": "为什么要同时做语义检索和关键词检索？",
+          "relevant": [
+            "混合检索的动机"
+          ],
+          "ranked": [
+            "RRF 倒数排名融合",
+            "Source 证据源",
+            "单阶段标量过滤下推",
+            "混合检索的动机",
+            "ONNX 量化精度"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 0.4307,
+          "query_embed_ms": 70.1,
+          "seekdb_search_ms": 21.98,
+          "e2e_ms": 96.3,
+          "rrf_scores": [
+            0.0292,
+            0.02685,
+            0.01639,
+            0.01639,
+            0.01613
+          ]
+        },
+        {
+          "query_id": "q-10",
+          "query": "混合检索为什么必须在数据库内完成？",
+          "relevant": [
+            "库内单 SQL 混合检索"
+          ],
+          "ranked": [
+            "库内单 SQL 混合检索",
+            "混合检索的动机",
+            "证据页检索",
+            "候选集扩召回",
+            "检索质量评测方法"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 70.2,
+          "seekdb_search_ms": 20.68,
+          "e2e_ms": 95.7,
+          "rrf_scores": [
+            0.03279,
+            0.032,
+            0.0315,
+            0.03128,
+            0.03009
+          ]
+        },
+        {
+          "query_id": "q-11",
+          "query": "Recall@K 是怎么定义的？",
+          "relevant": [
+            "Recall@K 指标"
+          ],
+          "ranked": [
+            "Recall@K 指标",
+            "Delta HNSW 与 Snapshot HNSW",
+            "bge-small-zh 模型",
+            "nDCG@K 指标",
+            "seekdb-js 官方 SDK"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 70.1,
+          "seekdb_search_ms": 21.7,
+          "e2e_ms": 96.1,
+          "rrf_scores": [
+            0.03279,
+            0.03126,
+            0.0308,
+            0.02983,
+            0.02946
+          ]
+        },
+        {
+          "query_id": "q-12",
+          "query": "nDCG 怎么计算排序质量？",
+          "relevant": [
+            "nDCG@K 指标"
+          ],
+          "ranked": [
+            "nDCG@K 指标",
+            "Recall@K 指标",
+            "余弦距离与归一化",
+            "单阶段标量过滤下推",
+            "RRF 倒数排名融合"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 69.4,
+          "seekdb_search_ms": 19.3,
+          "e2e_ms": 93.7,
+          "rrf_scores": [
+            0.03068,
+            0.02963,
+            0.02867,
+            0.02826,
+            0.01639
+          ]
+        },
+        {
+          "query_id": "q-13",
+          "query": "候选集为什么要扩大到三倍？",
+          "relevant": [
+            "候选集扩召回"
+          ],
+          "ranked": [
+            "候选集扩召回",
+            "bge-small-zh 模型",
+            "原始数据与测试日志",
+            "IK 中文分词全文索引",
+            "依赖清单与虚拟环境"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 71.8,
+          "seekdb_search_ms": 20.04,
+          "e2e_ms": 95.9,
+          "rrf_scores": [
+            0.03279,
+            0.01613,
+            0.01587,
+            0.01563,
+            0.01538
+          ]
+        },
+        {
+          "query_id": "q-14",
+          "query": "Transformers.js 在浏览器里怎么跑 embedding？",
+          "relevant": [
+            "Transformers.js 浏览器推理"
+          ],
+          "ranked": [
+            "Transformers.js 浏览器推理",
+            "WebGPU 后端",
+            "bge-small-zh 模型",
+            "Fork Diff Merge 数据工作流",
+            "Delta HNSW 与 Snapshot HNSW"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 72.1,
+          "seekdb_search_ms": 38.36,
+          "e2e_ms": 115.3,
+          "rrf_scores": [
+            0.03279,
+            0.03125,
+            0.02964,
+            0.02867,
+            0.01613
+          ]
+        },
+        {
+          "query_id": "q-15",
+          "query": "怎么获取 WebGPU 的显卡适配器？",
+          "relevant": [
+            "WebGPU 后端"
+          ],
+          "ranked": [
+            "PreparedContext 装配",
+            "bge-small-zh 模型",
+            "Delta HNSW 与 Snapshot HNSW",
+            "候选集扩召回",
+            "RRF 倒数排名融合"
+          ],
+          "recall_at_5": 0,
+          "ndcg_at_5": 0,
+          "query_embed_ms": 69.9,
+          "seekdb_search_ms": 34.51,
+          "e2e_ms": 108.8,
+          "rrf_scores": [
+            0.03031,
+            0.02983,
+            0.02914,
+            0.02759,
+            0.01639
+          ]
+        },
+        {
+          "query_id": "q-16",
+          "query": "没有 WebGPU 的时候怎么降级？",
+          "relevant": [
+            "WASM 降级路径"
+          ],
+          "ranked": [
+            "WASM 降级路径",
+            "服务端不可用时的降级",
+            "nDCG@K 指标",
+            "Candidate 审核晋升",
+            "单阶段标量过滤下推"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 64.8,
+          "seekdb_search_ms": 21.52,
+          "e2e_ms": 90,
+          "rrf_scores": [
+            0.03279,
+            0.03037,
+            0.02848,
+            0.02844,
+            0.01613
+          ]
+        },
+        {
+          "query_id": "q-17",
+          "query": "INT8 量化的模型体积大概是多少？",
+          "relevant": [
+            "ONNX 量化精度"
+          ],
+          "ranked": [
+            "ONNX 量化精度",
+            "Delta HNSW 与 Snapshot HNSW",
+            "批处理向量化",
+            "量化体积与压缩比",
+            "Recall@K 指标"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 73.1,
+          "seekdb_search_ms": 35.96,
+          "e2e_ms": 112.9,
+          "rrf_scores": [
+            0.03175,
+            0.03002,
+            0.02939,
+            0.02939,
+            0.02838
+          ]
+        },
+        {
+          "query_id": "q-18",
+          "query": "bge-small-zh 输出多少维向量？",
+          "relevant": [
+            "bge-small-zh 模型"
+          ],
+          "ranked": [
+            "bge-small-zh 模型",
+            "RRF 倒数排名融合",
+            "单阶段标量过滤下推",
+            "禁用云端推理",
+            "Transformers.js 浏览器推理"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 69.3,
+          "seekdb_search_ms": 37.43,
+          "e2e_ms": 110.8,
+          "rrf_scores": [
+            0.03279,
+            0.03105,
+            0.03102,
+            0.03033,
+            0.02908
+          ]
+        },
+        {
+          "query_id": "q-19",
+          "query": "压缩比应该怎么统计？",
+          "relevant": [
+            "量化体积与压缩比"
+          ],
+          "ranked": [
+            "量化体积与压缩比",
+            "Candidate 审核晋升",
+            "量化报告要求",
+            "WASM 降级路径",
+            "ONNX 量化精度"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 63.6,
+          "seekdb_search_ms": 20.24,
+          "e2e_ms": 87.7,
+          "rrf_scores": [
+            0.03279,
+            0.01613,
+            0.01613,
+            0.01587,
+            0.01563
+          ]
+        },
+        {
+          "query_id": "q-20",
+          "query": "冷加载和预热后的延迟为什么要分开报告？",
+          "relevant": [
+            "首次加载与预热"
+          ],
+          "ranked": [
+            "首次加载与预热",
+            "Candidate 审核晋升",
+            "Source 证据源",
+            "Delta HNSW 与 Snapshot HNSW",
+            "索引刷新与可见性"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 72.1,
+          "seekdb_search_ms": 21.63,
+          "e2e_ms": 97.3,
+          "rrf_scores": [
+            0.03279,
+            0.02963,
+            0.02942,
+            0.02904,
+            0.0276
+          ]
+        },
+        {
+          "query_id": "q-21",
+          "query": "PowerContext 里的 Candidate 是什么？",
+          "relevant": [
+            "Candidate 审核晋升"
+          ],
+          "ranked": [
+            "Delta HNSW 与 Snapshot HNSW",
+            "Recall@K 指标",
+            "PreparedContext 装配",
+            "Source 证据源",
+            "nDCG@K 指标"
+          ],
+          "recall_at_5": 0,
+          "ndcg_at_5": 0,
+          "query_embed_ms": 64,
+          "seekdb_search_ms": 21.47,
+          "e2e_ms": 89.1,
+          "rrf_scores": [
+            0.03202,
+            0.03102,
+            0.03101,
+            0.02946,
+            0.02908
+          ]
+        },
+        {
+          "query_id": "q-22",
+          "query": "Handoff 交接包里包含哪些内容？",
+          "relevant": [
+            "Handoff 交接包"
+          ],
+          "ranked": [
+            "PreparedContext 装配",
+            "RRF 倒数排名融合",
+            "Handoff 交接包",
+            "依赖清单与虚拟环境",
+            "Delta HNSW 与 Snapshot HNSW"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 0.5,
+          "query_embed_ms": 66.8,
+          "seekdb_search_ms": 20.06,
+          "e2e_ms": 91.2,
+          "rrf_scores": [
+            0.032,
+            0.01639,
+            0.01639,
+            0.01613,
+            0.01587
+          ]
+        },
+        {
+          "query_id": "q-23",
+          "query": "上下文是怎么按预算裁剪装配的？",
+          "relevant": [
+            "PreparedContext 装配"
+          ],
+          "ranked": [
+            "上下文增量传输",
+            "可复现性要求",
+            "候选集扩召回",
+            "PreparedContext 装配",
+            "证据页检索"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 0.4307,
+          "query_embed_ms": 72.8,
+          "seekdb_search_ms": 18.74,
+          "e2e_ms": 95.7,
+          "rrf_scores": [
+            0.03252,
+            0.02899,
+            0.0276,
+            0.01639,
+            0.01613
+          ]
+        },
+        {
+          "query_id": "q-24",
+          "query": "多个子目录同名模块跑 pytest 会出什么问题？",
+          "relevant": [
+            "pytest 同名模块冲突"
+          ],
+          "ranked": [
+            "pytest 同名模块冲突",
+            "依赖清单与虚拟环境",
+            "Recall@K 指标",
+            "原始数据与测试日志",
+            "Source 证据源"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 72.3,
+          "seekdb_search_ms": 19.21,
+          "e2e_ms": 95.2,
+          "rrf_scores": [
+            0.03279,
+            0.032,
+            0.01613,
+            0.01563,
+            0.01538
+          ]
+        },
+        {
+          "query_id": "q-25",
+          "query": "数据库连不上时接口应该返回什么？",
+          "relevant": [
+            "服务端不可用时的降级"
+          ],
+          "ranked": [
+            "服务端不可用时的降级",
+            "证据页检索",
+            "环境变量配置",
+            "WASM 降级路径",
+            "端到端延迟拆分"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 84.1,
+          "seekdb_search_ms": 20.7,
+          "e2e_ms": 110.1,
+          "rrf_scores": [
+            0.03252,
+            0.0308,
+            0.03078,
+            0.02988,
+            0.0274
+          ]
+        },
+        {
+          "query_id": "q-26",
+          "query": "赛题对量化报告有哪些要求？",
+          "relevant": [
+            "量化报告要求"
+          ],
+          "ranked": [
+            "阶跃星辰赛题要求",
+            "量化报告要求",
+            "WebGPU 优先与降级提示",
+            "高德赛题与 Skill 提交",
+            "可复现性要求"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 0.6309,
+          "query_embed_ms": 66.4,
+          "seekdb_search_ms": 18.83,
+          "e2e_ms": 89.1,
+          "rrf_scores": [
+            0.03252,
+            0.03178,
+            0.03175,
+            0.03126,
+            0.03055
+          ]
+        },
+        {
+          "query_id": "q-27",
+          "query": "检索质量应该用什么指标衡量？",
+          "relevant": [
+            "检索质量评测方法"
+          ],
+          "ranked": [
+            "检索质量评测方法",
+            "混合检索的动机",
+            "库内单 SQL 混合检索",
+            "证据页检索",
+            "候选集扩召回"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 64.7,
+          "seekdb_search_ms": 37.16,
+          "e2e_ms": 105.5,
+          "rrf_scores": [
+            0.03279,
+            0.0315,
+            0.03041,
+            0.03033,
+            0.03008
+          ]
+        },
+        {
+          "query_id": "q-28",
+          "query": "写入新文档后多久能被检索到？",
+          "relevant": [
+            "索引刷新后可见"
+          ],
+          "ranked": [
+            "索引刷新与可见性",
+            "候选集扩召回",
+            "证据页检索",
+            "Candidate 审核晋升",
+            "库内单 SQL 混合检索"
+          ],
+          "recall_at_5": 0,
+          "ndcg_at_5": 0,
+          "query_embed_ms": 67.8,
+          "seekdb_search_ms": 20.87,
+          "e2e_ms": 92.7,
+          "rrf_scores": [
+            0.03252,
+            0.03126,
+            0.03058,
+            0.02964,
+            0.02963
+          ]
+        },
+        {
+          "query_id": "q-29",
+          "query": "部署参数应该怎么配置才能复现？",
+          "relevant": [
+            "可复现性要求",
+            "环境变量配置"
+          ],
+          "ranked": [
+            "SeekDB 定位与嵌入式部署",
+            "环境变量配置",
+            "seekdb 资源参数",
+            "端到端延迟拆分",
+            "可复现性要求"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 0.6241,
+          "query_embed_ms": 72.4,
+          "seekdb_search_ms": 19.77,
+          "e2e_ms": 96.3,
+          "rrf_scores": [
+            0.03227,
+            0.03202,
+            0.03175,
+            0.03008,
+            0.01613
+          ]
+        },
+        {
+          "query_id": "q-30",
+          "query": "端到端延迟怎么拆阶段计时？",
+          "relevant": [
+            "端到端延迟拆分"
+          ],
+          "ranked": [
+            "端到端延迟拆分",
+            "单阶段标量过滤下推",
+            "WASM 降级路径",
+            "bge-small-zh 模型",
+            "原始数据与测试日志"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 61.8,
+          "seekdb_search_ms": 37.83,
+          "e2e_ms": 103.8,
+          "rrf_scores": [
+            0.03279,
+            0.0308,
+            0.03078,
+            0.03054,
+            0.02899
+          ]
+        }
+      ]
+    },
+    {
+      "label": "FP16 + WEBGPU",
+      "device": "webgpu",
+      "dtype": "fp16",
+      "model_size_mb": 45.3,
+      "cold_load_ms": 14218.5,
+      "download_ms": 13924.5,
+      "init_ms": 294,
+      "warmup_ms": 287.9,
+      "embed_total_ms": 464,
+      "throughput_docs_per_sec": 103.4,
+      "embed_p50_ms": 7.7,
+      "seekdb_p50_ms": 26.09,
+      "seekdb_p90_ms": 38.51,
+      "e2e_p50_ms": 37.55,
+      "recall_at_5": 0.9667,
+      "ndcg_at_5": 0.9377,
+      "per_query": [
+        {
+          "query_id": "q-01",
+          "query": "SeekDB 的向量索引用的是哪个引擎？",
+          "relevant": [
+            "VSAG HNSW 向量索引"
+          ],
+          "ranked": [
+            "VSAG HNSW 向量索引",
+            "Delta HNSW 与 Snapshot HNSW",
+            "bge-small-zh 模型",
+            "IK 中文分词全文索引",
+            "seekdb-js 官方 SDK"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 7.7,
+          "seekdb_search_ms": 33.16,
+          "e2e_ms": 45.7,
+          "rrf_scores": [
+            0.03279,
+            0.03175,
+            0.02988,
+            0.02971,
+            0.02946
+          ]
+        },
+        {
+          "query_id": "q-02",
+          "query": "增量索引和基线索引是怎么配合的？",
+          "relevant": [
+            "Delta HNSW 与 Snapshot HNSW"
+          ],
+          "ranked": [
+            "Delta HNSW 与 Snapshot HNSW",
+            "增量导入与集合切换",
+            "索引刷新与可见性",
+            "VSAG HNSW 向量索引",
+            "Recall@K 指标"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 8.7,
+          "seekdb_search_ms": 21.64,
+          "e2e_ms": 34.5,
+          "rrf_scores": [
+            0.03279,
+            0.032,
+            0.03078,
+            0.03062,
+            0.02996
+          ]
+        },
+        {
+          "query_id": "q-03",
+          "query": "中文全文检索用什么分词器？",
+          "relevant": [
+            "IK 中文分词全文索引"
+          ],
+          "ranked": [
+            "IK 中文分词全文索引",
+            "RRF 倒数排名融合",
+            "混合检索的动机",
+            "证据页检索",
+            "Recall@K 指标"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 7.1,
+          "seekdb_search_ms": 19.7,
+          "e2e_ms": 30.7,
+          "rrf_scores": [
+            0.03252,
+            0.03252,
+            0.0315,
+            0.03078,
+            0.02944
+          ]
+        },
+        {
+          "query_id": "q-04",
+          "query": "标量条件和向量距离怎么一起下推？",
+          "relevant": [
+            "单阶段标量过滤下推"
+          ],
+          "ranked": [
+            "单阶段标量过滤下推",
+            "余弦距离与归一化",
+            "VSAG HNSW 向量索引",
+            "PreparedContext 装配",
+            "禁用云端推理"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 6.7,
+          "seekdb_search_ms": 19.39,
+          "e2e_ms": 30.9,
+          "rrf_scores": [
+            0.03279,
+            0.03226,
+            0.0308,
+            0.02908,
+            0.02899
+          ]
+        },
+        {
+          "query_id": "q-05",
+          "query": "数据库的 Fork 沙箱是怎么工作的？",
+          "relevant": [
+            "Fork Diff Merge 数据工作流"
+          ],
+          "ranked": [
+            "Fork Diff Merge 数据工作流",
+            "SeekDB 定位与嵌入式部署",
+            "seekdb-js 官方 SDK",
+            "可复现性要求",
+            "环境变量配置"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 8.3,
+          "seekdb_search_ms": 23,
+          "e2e_ms": 35.9,
+          "rrf_scores": [
+            0.03279,
+            0.03175,
+            0.03151,
+            0.02964,
+            0.02685
+          ]
+        },
+        {
+          "query_id": "q-06",
+          "query": "官方 JavaScript SDK 的包名和入口类是什么？",
+          "relevant": [
+            "seekdb-js 官方 SDK"
+          ],
+          "ranked": [
+            "seekdb-js 官方 SDK",
+            "Delta HNSW 与 Snapshot HNSW",
+            "Handoff 交接包",
+            "Fork Diff Merge 数据工作流",
+            "Recall@K 指标"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 13.8,
+          "seekdb_search_ms": 41.33,
+          "e2e_ms": 60.2,
+          "rrf_scores": [
+            0.03279,
+            0.03105,
+            0.03016,
+            0.02964,
+            0.02914
+          ]
+        },
+        {
+          "query_id": "q-07",
+          "query": "内存小的机器启动数据库要设置哪些参数？",
+          "relevant": [
+            "seekdb 资源参数"
+          ],
+          "ranked": [
+            "seekdb 资源参数",
+            "环境变量配置",
+            "可复现性要求",
+            "Delta HNSW 与 Snapshot HNSW",
+            "SeekDB 定位与嵌入式部署"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 8.2,
+          "seekdb_search_ms": 22.81,
+          "e2e_ms": 35.5,
+          "rrf_scores": [
+            0.03279,
+            0.032,
+            0.032,
+            0.03054,
+            0.02879
+          ]
+        },
+        {
+          "query_id": "q-08",
+          "query": "RRF 融合公式里的 k 一般取多少？",
+          "relevant": [
+            "RRF 倒数排名融合"
+          ],
+          "ranked": [
+            "RRF 倒数排名融合",
+            "候选集扩召回",
+            "Delta HNSW 与 Snapshot HNSW",
+            "PreparedContext 装配",
+            "nDCG@K 指标"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 6.1,
+          "seekdb_search_ms": 29.19,
+          "e2e_ms": 39.2,
+          "rrf_scores": [
+            0.03279,
+            0.032,
+            0.03102,
+            0.03031,
+            0.02826
+          ]
+        },
+        {
+          "query_id": "q-09",
+          "query": "为什么要同时做语义检索和关键词检索？",
+          "relevant": [
+            "混合检索的动机"
+          ],
+          "ranked": [
+            "混合检索的动机",
+            "IK 中文分词全文索引",
+            "阶跃星辰赛题要求",
+            "Recall@K 指标",
+            "检索质量评测方法"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 7.8,
+          "seekdb_search_ms": 22.52,
+          "e2e_ms": 35.6,
+          "rrf_scores": [
+            0.03279,
+            0.03083,
+            0.0308,
+            0.03037,
+            0.03008
+          ]
+        },
+        {
+          "query_id": "q-10",
+          "query": "混合检索为什么必须在数据库内完成？",
+          "relevant": [
+            "库内单 SQL 混合检索"
+          ],
+          "ranked": [
+            "库内单 SQL 混合检索",
+            "混合检索的动机",
+            "证据页检索",
+            "可复现性要求",
+            "候选集扩召回"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 9.6,
+          "seekdb_search_ms": 43.73,
+          "e2e_ms": 58.3,
+          "rrf_scores": [
+            0.03279,
+            0.03226,
+            0.03102,
+            0.0308,
+            0.03054
+          ]
+        },
+        {
+          "query_id": "q-11",
+          "query": "Recall@K 是怎么定义的？",
+          "relevant": [
+            "Recall@K 指标"
+          ],
+          "ranked": [
+            "Recall@K 指标",
+            "seekdb-js 官方 SDK",
+            "bge-small-zh 模型",
+            "nDCG@K 指标",
+            "SeekDB 定位与嵌入式部署"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 7.4,
+          "seekdb_search_ms": 21.78,
+          "e2e_ms": 33.8,
+          "rrf_scores": [
+            0.03279,
+            0.032,
+            0.03016,
+            0.02983,
+            0.02951
+          ]
+        },
+        {
+          "query_id": "q-12",
+          "query": "nDCG 怎么计算排序质量？",
+          "relevant": [
+            "nDCG@K 指标"
+          ],
+          "ranked": [
+            "nDCG@K 指标",
+            "检索质量评测方法",
+            "单阶段标量过滤下推",
+            "量化报告要求",
+            "量化体积与压缩比"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 6.9,
+          "seekdb_search_ms": 31.46,
+          "e2e_ms": 42.5,
+          "rrf_scores": [
+            0.03279,
+            0.03125,
+            0.03105,
+            0.03054,
+            0.03037
+          ]
+        },
+        {
+          "query_id": "q-13",
+          "query": "候选集为什么要扩大到三倍？",
+          "relevant": [
+            "候选集扩召回"
+          ],
+          "ranked": [
+            "候选集扩召回",
+            "增量导入与集合切换",
+            "首次加载与预热",
+            "批处理向量化",
+            "Candidate 审核晋升"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 8.3,
+          "seekdb_search_ms": 21.42,
+          "e2e_ms": 33.2,
+          "rrf_scores": [
+            0.03279,
+            0.01613,
+            0.01587,
+            0.01563,
+            0.01538
+          ]
+        },
+        {
+          "query_id": "q-14",
+          "query": "Transformers.js 在浏览器里怎么跑 embedding？",
+          "relevant": [
+            "Transformers.js 浏览器推理"
+          ],
+          "ranked": [
+            "Transformers.js 浏览器推理",
+            "bge-small-zh 模型",
+            "seekdb 资源参数",
+            "库内单 SQL 混合检索",
+            "量化报告要求"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 8.1,
+          "seekdb_search_ms": 32.84,
+          "e2e_ms": 45.4,
+          "rrf_scores": [
+            0.03279,
+            0.03151,
+            0.03054,
+            0.03037,
+            0.02986
+          ]
+        },
+        {
+          "query_id": "q-15",
+          "query": "怎么获取 WebGPU 的显卡适配器？",
+          "relevant": [
+            "WebGPU 后端"
+          ],
+          "ranked": [
+            "WebGPU 后端",
+            "Delta HNSW 与 Snapshot HNSW",
+            "WASM 降级路径",
+            "seekdb-js 官方 SDK",
+            "WebGPU 优先与降级提示"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 7,
+          "seekdb_search_ms": 34.96,
+          "e2e_ms": 45.7,
+          "rrf_scores": [
+            0.03279,
+            0.03078,
+            0.03041,
+            0.03012,
+            0.02878
+          ]
+        },
+        {
+          "query_id": "q-16",
+          "query": "没有 WebGPU 的时候怎么降级？",
+          "relevant": [
+            "WASM 降级路径"
+          ],
+          "ranked": [
+            "WebGPU 优先与降级提示",
+            "WASM 降级路径",
+            "服务端不可用时的降级",
+            "WebGPU 后端",
+            "Candidate 审核晋升"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 0.6309,
+          "query_embed_ms": 5.8,
+          "seekdb_search_ms": 37.26,
+          "e2e_ms": 47.5,
+          "rrf_scores": [
+            0.03252,
+            0.03252,
+            0.03175,
+            0.03031,
+            0.02914
+          ]
+        },
+        {
+          "query_id": "q-17",
+          "query": "INT8 量化的模型体积大概是多少？",
+          "relevant": [
+            "ONNX 量化精度"
+          ],
+          "ranked": [
+            "量化体积与压缩比",
+            "量化报告要求",
+            "ONNX 量化精度",
+            "bge-small-zh 模型",
+            "余弦距离与归一化"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 0.5,
+          "query_embed_ms": 6.7,
+          "seekdb_search_ms": 19.49,
+          "e2e_ms": 31.5,
+          "rrf_scores": [
+            0.03227,
+            0.03227,
+            0.03226,
+            0.03101,
+            0.03033
+          ]
+        },
+        {
+          "query_id": "q-18",
+          "query": "bge-small-zh 输出多少维向量？",
+          "relevant": [
+            "bge-small-zh 模型"
+          ],
+          "ranked": [
+            "bge-small-zh 模型",
+            "余弦距离与归一化",
+            "VSAG HNSW 向量索引",
+            "RRF 倒数排名融合",
+            "Delta HNSW 与 Snapshot HNSW"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 6.8,
+          "seekdb_search_ms": 18.93,
+          "e2e_ms": 30.2,
+          "rrf_scores": [
+            0.03279,
+            0.032,
+            0.03175,
+            0.03008,
+            0.02991
+          ]
+        },
+        {
+          "query_id": "q-19",
+          "query": "压缩比应该怎么统计？",
+          "relevant": [
+            "量化体积与压缩比"
+          ],
+          "ranked": [
+            "量化体积与压缩比",
+            "量化报告要求",
+            "nDCG@K 指标",
+            "PreparedContext 装配",
+            "RRF 倒数排名融合"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 7.6,
+          "seekdb_search_ms": 18.91,
+          "e2e_ms": 30,
+          "rrf_scores": [
+            0.03279,
+            0.03151,
+            0.01613,
+            0.01587,
+            0.01563
+          ]
+        },
+        {
+          "query_id": "q-20",
+          "query": "冷加载和预热后的延迟为什么要分开报告？",
+          "relevant": [
+            "首次加载与预热"
+          ],
+          "ranked": [
+            "首次加载与预热",
+            "禁用云端推理",
+            "原始数据与测试日志",
+            "Delta HNSW 与 Snapshot HNSW",
+            "PreparedContext 装配"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 6.4,
+          "seekdb_search_ms": 20.58,
+          "e2e_ms": 31.3,
+          "rrf_scores": [
+            0.03279,
+            0.03126,
+            0.02941,
+            0.02924,
+            0.02885
+          ]
+        },
+        {
+          "query_id": "q-21",
+          "query": "PowerContext 里的 Candidate 是什么？",
+          "relevant": [
+            "Candidate 审核晋升"
+          ],
+          "ranked": [
+            "Delta HNSW 与 Snapshot HNSW",
+            "seekdb-js 官方 SDK",
+            "PreparedContext 装配",
+            "Source 证据源",
+            "Recall@K 指标"
+          ],
+          "recall_at_5": 0,
+          "ndcg_at_5": 0,
+          "query_embed_ms": 6.9,
+          "seekdb_search_ms": 38.51,
+          "e2e_ms": 49,
+          "rrf_scores": [
+            0.0315,
+            0.03062,
+            0.03054,
+            0.03021,
+            0.02976
+          ]
+        },
+        {
+          "query_id": "q-22",
+          "query": "Handoff 交接包里包含哪些内容？",
+          "relevant": [
+            "Handoff 交接包"
+          ],
+          "ranked": [
+            "Handoff 交接包",
+            "PreparedContext 装配",
+            "依赖清单与虚拟环境",
+            "Source 证据源",
+            "seekdb-js 官方 SDK"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 8.4,
+          "seekdb_search_ms": 18.57,
+          "e2e_ms": 31,
+          "rrf_scores": [
+            0.03279,
+            0.03102,
+            0.02983,
+            0.02927,
+            0.02896
+          ]
+        },
+        {
+          "query_id": "q-23",
+          "query": "上下文是怎么按预算裁剪装配的？",
+          "relevant": [
+            "PreparedContext 装配"
+          ],
+          "ranked": [
+            "PreparedContext 装配",
+            "上下文增量传输",
+            "Handoff 交接包",
+            "可复现性要求",
+            "Delta HNSW 与 Snapshot HNSW"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 5.9,
+          "seekdb_search_ms": 36.77,
+          "e2e_ms": 47.6,
+          "rrf_scores": [
+            0.03279,
+            0.032,
+            0.0308,
+            0.02941,
+            0.02801
+          ]
+        },
+        {
+          "query_id": "q-24",
+          "query": "多个子目录同名模块跑 pytest 会出什么问题？",
+          "relevant": [
+            "pytest 同名模块冲突"
+          ],
+          "ranked": [
+            "pytest 同名模块冲突",
+            "依赖清单与虚拟环境",
+            "高德赛题与 Skill 提交",
+            "Delta HNSW 与 Snapshot HNSW",
+            "阶跃星辰赛题要求"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 7.3,
+          "seekdb_search_ms": 35.21,
+          "e2e_ms": 46.7,
+          "rrf_scores": [
+            0.03279,
+            0.03021,
+            0.01613,
+            0.01587,
+            0.01563
+          ]
+        },
+        {
+          "query_id": "q-25",
+          "query": "数据库连不上时接口应该返回什么？",
+          "relevant": [
+            "服务端不可用时的降级"
+          ],
+          "ranked": [
+            "服务端不可用时的降级",
+            "可复现性要求",
+            "环境变量配置",
+            "WASM 降级路径",
+            "Transformers.js 浏览器推理"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 7.9,
+          "seekdb_search_ms": 34.44,
+          "e2e_ms": 47.3,
+          "rrf_scores": [
+            0.03279,
+            0.032,
+            0.0315,
+            0.03101,
+            0.02983
+          ]
+        },
+        {
+          "query_id": "q-26",
+          "query": "赛题对量化报告有哪些要求？",
+          "relevant": [
+            "量化报告要求"
+          ],
+          "ranked": [
+            "量化报告要求",
+            "增量导入与集合切换",
+            "阶跃星辰赛题要求",
+            "量化体积与压缩比",
+            "高德赛题与 Skill 提交"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 7.6,
+          "seekdb_search_ms": 18.61,
+          "e2e_ms": 30.2,
+          "rrf_scores": [
+            0.03279,
+            0.032,
+            0.03175,
+            0.02988,
+            0.02988
+          ]
+        },
+        {
+          "query_id": "q-27",
+          "query": "检索质量应该用什么指标衡量？",
+          "relevant": [
+            "检索质量评测方法"
+          ],
+          "ranked": [
+            "检索质量评测方法",
+            "Recall@K 指标",
+            "nDCG@K 指标",
+            "混合检索的动机",
+            "量化报告要求"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 9.1,
+          "seekdb_search_ms": 33.05,
+          "e2e_ms": 45.7,
+          "rrf_scores": [
+            0.03279,
+            0.03226,
+            0.03175,
+            0.03125,
+            0.03077
+          ]
+        },
+        {
+          "query_id": "q-28",
+          "query": "写入新文档后多久能被检索到？",
+          "relevant": [
+            "索引刷新后可见"
+          ],
+          "ranked": [
+            "索引刷新后可见",
+            "索引刷新与可见性",
+            "证据页检索",
+            "增量导入与集合切换",
+            "Recall@K 指标"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 6.8,
+          "seekdb_search_ms": 37.39,
+          "e2e_ms": 48.5,
+          "rrf_scores": [
+            0.03279,
+            0.03226,
+            0.03175,
+            0.02971,
+            0.02964
+          ]
+        },
+        {
+          "query_id": "q-29",
+          "query": "部署参数应该怎么配置才能复现？",
+          "relevant": [
+            "可复现性要求",
+            "环境变量配置"
+          ],
+          "ranked": [
+            "可复现性要求",
+            "环境变量配置",
+            "seekdb 资源参数",
+            "高德赛题与 Skill 提交",
+            "SeekDB 定位与嵌入式部署"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 7.1,
+          "seekdb_search_ms": 34.64,
+          "e2e_ms": 46,
+          "rrf_scores": [
+            0.03252,
+            0.03132,
+            0.02991,
+            0.02986,
+            0.02976
+          ]
+        },
+        {
+          "query_id": "q-30",
+          "query": "端到端延迟怎么拆阶段计时？",
+          "relevant": [
+            "端到端延迟拆分"
+          ],
+          "ranked": [
+            "端到端延迟拆分",
+            "批处理向量化",
+            "WASM 降级路径",
+            "WebGPU 优先与降级提示",
+            "WebGPU 后端"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 7.3,
+          "seekdb_search_ms": 20.9,
+          "e2e_ms": 31.7,
+          "rrf_scores": [
+            0.03279,
+            0.03226,
+            0.03078,
+            0.03037,
+            0.02991
+          ]
+        }
+      ]
+    },
+    {
+      "label": "FP32 + WEBGPU",
+      "device": "webgpu",
+      "dtype": "fp32",
+      "model_size_mb": 90.46,
+      "cold_load_ms": 27967.1,
+      "download_ms": 27587,
+      "init_ms": 380.1,
+      "warmup_ms": 86.4,
+      "embed_total_ms": 352,
+      "throughput_docs_per_sec": 136.4,
+      "embed_p50_ms": 7.35,
+      "seekdb_p50_ms": 24.03,
+      "seekdb_p90_ms": 40.2,
+      "e2e_p50_ms": 35.5,
+      "recall_at_5": 0.9667,
+      "ndcg_at_5": 0.9377,
+      "per_query": [
+        {
+          "query_id": "q-01",
+          "query": "SeekDB 的向量索引用的是哪个引擎？",
+          "relevant": [
+            "VSAG HNSW 向量索引"
+          ],
+          "ranked": [
+            "VSAG HNSW 向量索引",
+            "Delta HNSW 与 Snapshot HNSW",
+            "bge-small-zh 模型",
+            "IK 中文分词全文索引",
+            "seekdb-js 官方 SDK"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 6.9,
+          "seekdb_search_ms": 25.2,
+          "e2e_ms": 36.3,
+          "rrf_scores": [
+            0.03279,
+            0.03175,
+            0.02988,
+            0.02971,
+            0.02964
+          ]
+        },
+        {
+          "query_id": "q-02",
+          "query": "增量索引和基线索引是怎么配合的？",
+          "relevant": [
+            "Delta HNSW 与 Snapshot HNSW"
+          ],
+          "ranked": [
+            "Delta HNSW 与 Snapshot HNSW",
+            "增量导入与集合切换",
+            "索引刷新与可见性",
+            "VSAG HNSW 向量索引",
+            "Recall@K 指标"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 8,
+          "seekdb_search_ms": 40.2,
+          "e2e_ms": 53,
+          "rrf_scores": [
+            0.03279,
+            0.032,
+            0.03078,
+            0.03062,
+            0.02996
+          ]
+        },
+        {
+          "query_id": "q-03",
+          "query": "中文全文检索用什么分词器？",
+          "relevant": [
+            "IK 中文分词全文索引"
+          ],
+          "ranked": [
+            "IK 中文分词全文索引",
+            "RRF 倒数排名融合",
+            "混合检索的动机",
+            "证据页检索",
+            "Recall@K 指标"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 9,
+          "seekdb_search_ms": 33.19,
+          "e2e_ms": 45.9,
+          "rrf_scores": [
+            0.03252,
+            0.03252,
+            0.0315,
+            0.03078,
+            0.02944
+          ]
+        },
+        {
+          "query_id": "q-04",
+          "query": "标量条件和向量距离怎么一起下推？",
+          "relevant": [
+            "单阶段标量过滤下推"
+          ],
+          "ranked": [
+            "单阶段标量过滤下推",
+            "余弦距离与归一化",
+            "VSAG HNSW 向量索引",
+            "PreparedContext 装配",
+            "禁用云端推理"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 6.6,
+          "seekdb_search_ms": 35.59,
+          "e2e_ms": 46.5,
+          "rrf_scores": [
+            0.03279,
+            0.03226,
+            0.0308,
+            0.02927,
+            0.02899
+          ]
+        },
+        {
+          "query_id": "q-05",
+          "query": "数据库的 Fork 沙箱是怎么工作的？",
+          "relevant": [
+            "Fork Diff Merge 数据工作流"
+          ],
+          "ranked": [
+            "Fork Diff Merge 数据工作流",
+            "SeekDB 定位与嵌入式部署",
+            "seekdb-js 官方 SDK",
+            "可复现性要求",
+            "环境变量配置"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 6.4,
+          "seekdb_search_ms": 35.81,
+          "e2e_ms": 48.5,
+          "rrf_scores": [
+            0.03279,
+            0.03175,
+            0.03151,
+            0.02964,
+            0.02685
+          ]
+        },
+        {
+          "query_id": "q-06",
+          "query": "官方 JavaScript SDK 的包名和入口类是什么？",
+          "relevant": [
+            "seekdb-js 官方 SDK"
+          ],
+          "ranked": [
+            "seekdb-js 官方 SDK",
+            "Delta HNSW 与 Snapshot HNSW",
+            "Handoff 交接包",
+            "Fork Diff Merge 数据工作流",
+            "Recall@K 指标"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 8.1,
+          "seekdb_search_ms": 21.51,
+          "e2e_ms": 34.2,
+          "rrf_scores": [
+            0.03279,
+            0.03105,
+            0.03016,
+            0.02964,
+            0.02932
+          ]
+        },
+        {
+          "query_id": "q-07",
+          "query": "内存小的机器启动数据库要设置哪些参数？",
+          "relevant": [
+            "seekdb 资源参数"
+          ],
+          "ranked": [
+            "seekdb 资源参数",
+            "环境变量配置",
+            "可复现性要求",
+            "Delta HNSW 与 Snapshot HNSW",
+            "SeekDB 定位与嵌入式部署"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 7.2,
+          "seekdb_search_ms": 22.86,
+          "e2e_ms": 34.7,
+          "rrf_scores": [
+            0.03279,
+            0.032,
+            0.032,
+            0.03054,
+            0.02879
+          ]
+        },
+        {
+          "query_id": "q-08",
+          "query": "RRF 融合公式里的 k 一般取多少？",
+          "relevant": [
+            "RRF 倒数排名融合"
+          ],
+          "ranked": [
+            "RRF 倒数排名融合",
+            "候选集扩召回",
+            "Delta HNSW 与 Snapshot HNSW",
+            "PreparedContext 装配",
+            "Recall@K 指标"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 7.4,
+          "seekdb_search_ms": 41.55,
+          "e2e_ms": 53.4,
+          "rrf_scores": [
+            0.03279,
+            0.032,
+            0.03102,
+            0.03031,
+            0.02946
+          ]
+        },
+        {
+          "query_id": "q-09",
+          "query": "为什么要同时做语义检索和关键词检索？",
+          "relevant": [
+            "混合检索的动机"
+          ],
+          "ranked": [
+            "混合检索的动机",
+            "IK 中文分词全文索引",
+            "阶跃星辰赛题要求",
+            "Recall@K 指标",
+            "检索质量评测方法"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 9,
+          "seekdb_search_ms": 33.63,
+          "e2e_ms": 47.7,
+          "rrf_scores": [
+            0.03279,
+            0.03083,
+            0.0308,
+            0.03037,
+            0.03008
+          ]
+        },
+        {
+          "query_id": "q-10",
+          "query": "混合检索为什么必须在数据库内完成？",
+          "relevant": [
+            "库内单 SQL 混合检索"
+          ],
+          "ranked": [
+            "库内单 SQL 混合检索",
+            "混合检索的动机",
+            "证据页检索",
+            "可复现性要求",
+            "候选集扩召回"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 7.6,
+          "seekdb_search_ms": 20.38,
+          "e2e_ms": 31.7,
+          "rrf_scores": [
+            0.03279,
+            0.03226,
+            0.03102,
+            0.0308,
+            0.03054
+          ]
+        },
+        {
+          "query_id": "q-11",
+          "query": "Recall@K 是怎么定义的？",
+          "relevant": [
+            "Recall@K 指标"
+          ],
+          "ranked": [
+            "Recall@K 指标",
+            "seekdb-js 官方 SDK",
+            "bge-small-zh 模型",
+            "nDCG@K 指标",
+            "SeekDB 定位与嵌入式部署"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 7.2,
+          "seekdb_search_ms": 19.88,
+          "e2e_ms": 32.5,
+          "rrf_scores": [
+            0.03279,
+            0.032,
+            0.03016,
+            0.02983,
+            0.02951
+          ]
+        },
+        {
+          "query_id": "q-12",
+          "query": "nDCG 怎么计算排序质量？",
+          "relevant": [
+            "nDCG@K 指标"
+          ],
+          "ranked": [
+            "nDCG@K 指标",
+            "检索质量评测方法",
+            "单阶段标量过滤下推",
+            "量化报告要求",
+            "量化体积与压缩比"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 7.7,
+          "seekdb_search_ms": 19.34,
+          "e2e_ms": 32.4,
+          "rrf_scores": [
+            0.03279,
+            0.03125,
+            0.03105,
+            0.03054,
+            0.03037
+          ]
+        },
+        {
+          "query_id": "q-13",
+          "query": "候选集为什么要扩大到三倍？",
+          "relevant": [
+            "候选集扩召回"
+          ],
+          "ranked": [
+            "候选集扩召回",
+            "增量导入与集合切换",
+            "首次加载与预热",
+            "批处理向量化",
+            "Candidate 审核晋升"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 7.2,
+          "seekdb_search_ms": 31.09,
+          "e2e_ms": 42,
+          "rrf_scores": [
+            0.03279,
+            0.01613,
+            0.01587,
+            0.01563,
+            0.01538
+          ]
+        },
+        {
+          "query_id": "q-14",
+          "query": "Transformers.js 在浏览器里怎么跑 embedding？",
+          "relevant": [
+            "Transformers.js 浏览器推理"
+          ],
+          "ranked": [
+            "Transformers.js 浏览器推理",
+            "bge-small-zh 模型",
+            "seekdb 资源参数",
+            "库内单 SQL 混合检索",
+            "量化报告要求"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 6.3,
+          "seekdb_search_ms": 21.81,
+          "e2e_ms": 32,
+          "rrf_scores": [
+            0.03279,
+            0.03151,
+            0.03054,
+            0.03037,
+            0.02986
+          ]
+        },
+        {
+          "query_id": "q-15",
+          "query": "怎么获取 WebGPU 的显卡适配器？",
+          "relevant": [
+            "WebGPU 后端"
+          ],
+          "ranked": [
+            "WebGPU 后端",
+            "Delta HNSW 与 Snapshot HNSW",
+            "WASM 降级路径",
+            "seekdb-js 官方 SDK",
+            "WebGPU 优先与降级提示"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 7,
+          "seekdb_search_ms": 36.08,
+          "e2e_ms": 47.4,
+          "rrf_scores": [
+            0.03279,
+            0.03078,
+            0.03041,
+            0.03012,
+            0.02878
+          ]
+        },
+        {
+          "query_id": "q-16",
+          "query": "没有 WebGPU 的时候怎么降级？",
+          "relevant": [
+            "WASM 降级路径"
+          ],
+          "ranked": [
+            "WebGPU 优先与降级提示",
+            "WASM 降级路径",
+            "服务端不可用时的降级",
+            "WebGPU 后端",
+            "Candidate 审核晋升"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 0.6309,
+          "query_embed_ms": 7.2,
+          "seekdb_search_ms": 35.15,
+          "e2e_ms": 47.3,
+          "rrf_scores": [
+            0.03252,
+            0.03252,
+            0.03175,
+            0.03031,
+            0.02914
+          ]
+        },
+        {
+          "query_id": "q-17",
+          "query": "INT8 量化的模型体积大概是多少？",
+          "relevant": [
+            "ONNX 量化精度"
+          ],
+          "ranked": [
+            "量化体积与压缩比",
+            "量化报告要求",
+            "ONNX 量化精度",
+            "bge-small-zh 模型",
+            "余弦距离与归一化"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 0.5,
+          "query_embed_ms": 7.1,
+          "seekdb_search_ms": 20.51,
+          "e2e_ms": 31.6,
+          "rrf_scores": [
+            0.03227,
+            0.03227,
+            0.03226,
+            0.03101,
+            0.03033
+          ]
+        },
+        {
+          "query_id": "q-18",
+          "query": "bge-small-zh 输出多少维向量？",
+          "relevant": [
+            "bge-small-zh 模型"
+          ],
+          "ranked": [
+            "bge-small-zh 模型",
+            "余弦距离与归一化",
+            "VSAG HNSW 向量索引",
+            "RRF 倒数排名融合",
+            "Delta HNSW 与 Snapshot HNSW"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 6.6,
+          "seekdb_search_ms": 20.56,
+          "e2e_ms": 31.1,
+          "rrf_scores": [
+            0.03279,
+            0.032,
+            0.03175,
+            0.03008,
+            0.02991
+          ]
+        },
+        {
+          "query_id": "q-19",
+          "query": "压缩比应该怎么统计？",
+          "relevant": [
+            "量化体积与压缩比"
+          ],
+          "ranked": [
+            "量化体积与压缩比",
+            "量化报告要求",
+            "nDCG@K 指标",
+            "PreparedContext 装配",
+            "RRF 倒数排名融合"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 6.4,
+          "seekdb_search_ms": 19.19,
+          "e2e_ms": 30.3,
+          "rrf_scores": [
+            0.03279,
+            0.03151,
+            0.01613,
+            0.01587,
+            0.01563
+          ]
+        },
+        {
+          "query_id": "q-20",
+          "query": "冷加载和预热后的延迟为什么要分开报告？",
+          "relevant": [
+            "首次加载与预热"
+          ],
+          "ranked": [
+            "首次加载与预热",
+            "禁用云端推理",
+            "原始数据与测试日志",
+            "Delta HNSW 与 Snapshot HNSW",
+            "PreparedContext 装配"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 6.3,
+          "seekdb_search_ms": 36.03,
+          "e2e_ms": 46,
+          "rrf_scores": [
+            0.03279,
+            0.03126,
+            0.02941,
+            0.02924,
+            0.02885
+          ]
+        },
+        {
+          "query_id": "q-21",
+          "query": "PowerContext 里的 Candidate 是什么？",
+          "relevant": [
+            "Candidate 审核晋升"
+          ],
+          "ranked": [
+            "Delta HNSW 与 Snapshot HNSW",
+            "seekdb-js 官方 SDK",
+            "PreparedContext 装配",
+            "Source 证据源",
+            "Recall@K 指标"
+          ],
+          "recall_at_5": 0,
+          "ndcg_at_5": 0,
+          "query_embed_ms": 7.9,
+          "seekdb_search_ms": 20.89,
+          "e2e_ms": 32.5,
+          "rrf_scores": [
+            0.0315,
+            0.03062,
+            0.03054,
+            0.03021,
+            0.02976
+          ]
+        },
+        {
+          "query_id": "q-22",
+          "query": "Handoff 交接包里包含哪些内容？",
+          "relevant": [
+            "Handoff 交接包"
+          ],
+          "ranked": [
+            "Handoff 交接包",
+            "PreparedContext 装配",
+            "依赖清单与虚拟环境",
+            "Source 证据源",
+            "seekdb-js 官方 SDK"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 6.9,
+          "seekdb_search_ms": 21.17,
+          "e2e_ms": 32.2,
+          "rrf_scores": [
+            0.03279,
+            0.03102,
+            0.02983,
+            0.02927,
+            0.02896
+          ]
+        },
+        {
+          "query_id": "q-23",
+          "query": "上下文是怎么按预算裁剪装配的？",
+          "relevant": [
+            "PreparedContext 装配"
+          ],
+          "ranked": [
+            "PreparedContext 装配",
+            "上下文增量传输",
+            "Handoff 交接包",
+            "可复现性要求",
+            "Delta HNSW 与 Snapshot HNSW"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 8.4,
+          "seekdb_search_ms": 34.61,
+          "e2e_ms": 47,
+          "rrf_scores": [
+            0.03279,
+            0.032,
+            0.0308,
+            0.02941,
+            0.02801
+          ]
+        },
+        {
+          "query_id": "q-24",
+          "query": "多个子目录同名模块跑 pytest 会出什么问题？",
+          "relevant": [
+            "pytest 同名模块冲突"
+          ],
+          "ranked": [
+            "pytest 同名模块冲突",
+            "依赖清单与虚拟环境",
+            "高德赛题与 Skill 提交",
+            "Delta HNSW 与 Snapshot HNSW",
+            "阶跃星辰赛题要求"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 8.1,
+          "seekdb_search_ms": 21.47,
+          "e2e_ms": 34,
+          "rrf_scores": [
+            0.03279,
+            0.03021,
+            0.01613,
+            0.01587,
+            0.01563
+          ]
+        },
+        {
+          "query_id": "q-25",
+          "query": "数据库连不上时接口应该返回什么？",
+          "relevant": [
+            "服务端不可用时的降级"
+          ],
+          "ranked": [
+            "服务端不可用时的降级",
+            "可复现性要求",
+            "环境变量配置",
+            "WASM 降级路径",
+            "Transformers.js 浏览器推理"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 7.6,
+          "seekdb_search_ms": 31.27,
+          "e2e_ms": 45.2,
+          "rrf_scores": [
+            0.03279,
+            0.032,
+            0.0315,
+            0.03101,
+            0.02983
+          ]
+        },
+        {
+          "query_id": "q-26",
+          "query": "赛题对量化报告有哪些要求？",
+          "relevant": [
+            "量化报告要求"
+          ],
+          "ranked": [
+            "量化报告要求",
+            "增量导入与集合切换",
+            "阶跃星辰赛题要求",
+            "量化体积与压缩比",
+            "高德赛题与 Skill 提交"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 8.3,
+          "seekdb_search_ms": 31.42,
+          "e2e_ms": 44,
+          "rrf_scores": [
+            0.03279,
+            0.032,
+            0.03175,
+            0.02988,
+            0.02988
+          ]
+        },
+        {
+          "query_id": "q-27",
+          "query": "检索质量应该用什么指标衡量？",
+          "relevant": [
+            "检索质量评测方法"
+          ],
+          "ranked": [
+            "检索质量评测方法",
+            "Recall@K 指标",
+            "nDCG@K 指标",
+            "混合检索的动机",
+            "量化报告要求"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 7.1,
+          "seekdb_search_ms": 22.51,
+          "e2e_ms": 33.6,
+          "rrf_scores": [
+            0.03279,
+            0.03226,
+            0.03175,
+            0.03125,
+            0.03077
+          ]
+        },
+        {
+          "query_id": "q-28",
+          "query": "写入新文档后多久能被检索到？",
+          "relevant": [
+            "索引刷新后可见"
+          ],
+          "ranked": [
+            "索引刷新后可见",
+            "索引刷新与可见性",
+            "证据页检索",
+            "增量导入与集合切换",
+            "Recall@K 指标"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 5.8,
+          "seekdb_search_ms": 22.51,
+          "e2e_ms": 32.5,
+          "rrf_scores": [
+            0.03279,
+            0.03226,
+            0.03175,
+            0.02971,
+            0.02964
+          ]
+        },
+        {
+          "query_id": "q-29",
+          "query": "部署参数应该怎么配置才能复现？",
+          "relevant": [
+            "可复现性要求",
+            "环境变量配置"
+          ],
+          "ranked": [
+            "可复现性要求",
+            "环境变量配置",
+            "seekdb 资源参数",
+            "高德赛题与 Skill 提交",
+            "SeekDB 定位与嵌入式部署"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 7.4,
+          "seekdb_search_ms": 21.78,
+          "e2e_ms": 33.5,
+          "rrf_scores": [
+            0.03252,
+            0.03132,
+            0.02991,
+            0.02986,
+            0.02976
+          ]
+        },
+        {
+          "query_id": "q-30",
+          "query": "端到端延迟怎么拆阶段计时？",
+          "relevant": [
+            "端到端延迟拆分"
+          ],
+          "ranked": [
+            "端到端延迟拆分",
+            "批处理向量化",
+            "WASM 降级路径",
+            "WebGPU 优先与降级提示",
+            "WebGPU 后端"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 5.5,
+          "seekdb_search_ms": 44.8,
+          "e2e_ms": 55.7,
+          "rrf_scores": [
+            0.03279,
+            0.03226,
+            0.03078,
+            0.03037,
+            0.02991
+          ]
+        }
+      ]
+    },
+    {
+      "label": "INT8 (q8) + WASM",
+      "device": "wasm",
+      "dtype": "q8",
+      "model_size_mb": 22.9,
+      "cold_load_ms": 82,
+      "download_ms": 27.5,
+      "init_ms": 54.5,
+      "warmup_ms": 114.3,
+      "embed_total_ms": 1428.1,
+      "throughput_docs_per_sec": 33.6,
+      "embed_p50_ms": 30.15,
+      "seekdb_p50_ms": 27.71,
+      "seekdb_p90_ms": 38.58,
+      "e2e_p50_ms": 41.85,
+      "recall_at_5": 0.9667,
+      "ndcg_at_5": 0.9377,
+      "per_query": [
+        {
+          "query_id": "q-01",
+          "query": "SeekDB 的向量索引用的是哪个引擎？",
+          "relevant": [
+            "VSAG HNSW 向量索引"
+          ],
+          "ranked": [
+            "VSAG HNSW 向量索引",
+            "Delta HNSW 与 Snapshot HNSW",
+            "IK 中文分词全文索引",
+            "seekdb-js 官方 SDK",
+            "单阶段标量过滤下推"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 10.3,
+          "seekdb_search_ms": 29.88,
+          "e2e_ms": 44.5,
+          "rrf_scores": [
+            0.03279,
+            0.03175,
+            0.02971,
+            0.02946,
+            0.02924
+          ]
+        },
+        {
+          "query_id": "q-02",
+          "query": "增量索引和基线索引是怎么配合的？",
+          "relevant": [
+            "Delta HNSW 与 Snapshot HNSW"
+          ],
+          "ranked": [
+            "Delta HNSW 与 Snapshot HNSW",
+            "增量导入与集合切换",
+            "索引刷新与可见性",
+            "IK 中文分词全文索引",
+            "VSAG HNSW 向量索引"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 9.6,
+          "seekdb_search_ms": 21.06,
+          "e2e_ms": 34.8,
+          "rrf_scores": [
+            0.03279,
+            0.032,
+            0.03078,
+            0.03077,
+            0.03062
+          ]
+        },
+        {
+          "query_id": "q-03",
+          "query": "中文全文检索用什么分词器？",
+          "relevant": [
+            "IK 中文分词全文索引"
+          ],
+          "ranked": [
+            "IK 中文分词全文索引",
+            "RRF 倒数排名融合",
+            "混合检索的动机",
+            "证据页检索",
+            "Recall@K 指标"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 8.3,
+          "seekdb_search_ms": 40.7,
+          "e2e_ms": 53.5,
+          "rrf_scores": [
+            0.03252,
+            0.03252,
+            0.03175,
+            0.03125,
+            0.02924
+          ]
+        },
+        {
+          "query_id": "q-04",
+          "query": "标量条件和向量距离怎么一起下推？",
+          "relevant": [
+            "单阶段标量过滤下推"
+          ],
+          "ranked": [
+            "单阶段标量过滤下推",
+            "余弦距离与归一化",
+            "VSAG HNSW 向量索引",
+            "禁用云端推理",
+            "PreparedContext 装配"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 10.8,
+          "seekdb_search_ms": 33.3,
+          "e2e_ms": 48,
+          "rrf_scores": [
+            0.03279,
+            0.03226,
+            0.03126,
+            0.02899,
+            0.0289
+          ]
+        },
+        {
+          "query_id": "q-05",
+          "query": "数据库的 Fork 沙箱是怎么工作的？",
+          "relevant": [
+            "Fork Diff Merge 数据工作流"
+          ],
+          "ranked": [
+            "Fork Diff Merge 数据工作流",
+            "SeekDB 定位与嵌入式部署",
+            "seekdb-js 官方 SDK",
+            "可复现性要求",
+            "Delta HNSW 与 Snapshot HNSW"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 8.7,
+          "seekdb_search_ms": 22.08,
+          "e2e_ms": 34.3,
+          "rrf_scores": [
+            0.03279,
+            0.03175,
+            0.03151,
+            0.02986,
+            0.02804
+          ]
+        },
+        {
+          "query_id": "q-06",
+          "query": "官方 JavaScript SDK 的包名和入口类是什么？",
+          "relevant": [
+            "seekdb-js 官方 SDK"
+          ],
+          "ranked": [
+            "seekdb-js 官方 SDK",
+            "Delta HNSW 与 Snapshot HNSW",
+            "Handoff 交接包",
+            "Recall@K 指标",
+            "Fork Diff Merge 数据工作流"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 9.3,
+          "seekdb_search_ms": 20.53,
+          "e2e_ms": 33.7,
+          "rrf_scores": [
+            0.03279,
+            0.03055,
+            0.03041,
+            0.02932,
+            0.02924
+          ]
+        },
+        {
+          "query_id": "q-07",
+          "query": "内存小的机器启动数据库要设置哪些参数？",
+          "relevant": [
+            "seekdb 资源参数"
+          ],
+          "ranked": [
+            "seekdb 资源参数",
+            "环境变量配置",
+            "可复现性要求",
+            "Delta HNSW 与 Snapshot HNSW",
+            "服务端不可用时的降级"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 11,
+          "seekdb_search_ms": 21.14,
+          "e2e_ms": 35.6,
+          "rrf_scores": [
+            0.03279,
+            0.032,
+            0.032,
+            0.03031,
+            0.02896
+          ]
+        },
+        {
+          "query_id": "q-08",
+          "query": "RRF 融合公式里的 k 一般取多少？",
+          "relevant": [
+            "RRF 倒数排名融合"
+          ],
+          "ranked": [
+            "RRF 倒数排名融合",
+            "候选集扩召回",
+            "Delta HNSW 与 Snapshot HNSW",
+            "PreparedContext 装配",
+            "Recall@K 指标"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 8.8,
+          "seekdb_search_ms": 37.18,
+          "e2e_ms": 50.3,
+          "rrf_scores": [
+            0.03279,
+            0.032,
+            0.03102,
+            0.03008,
+            0.02964
+          ]
+        },
+        {
+          "query_id": "q-09",
+          "query": "为什么要同时做语义检索和关键词检索？",
+          "relevant": [
+            "混合检索的动机"
+          ],
+          "ranked": [
+            "混合检索的动机",
+            "阶跃星辰赛题要求",
+            "IK 中文分词全文索引",
+            "库内单 SQL 混合检索",
+            "Recall@K 指标"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 12.1,
+          "seekdb_search_ms": 31.18,
+          "e2e_ms": 47,
+          "rrf_scores": [
+            0.03279,
+            0.0315,
+            0.03105,
+            0.03016,
+            0.02988
+          ]
+        },
+        {
+          "query_id": "q-10",
+          "query": "混合检索为什么必须在数据库内完成？",
+          "relevant": [
+            "库内单 SQL 混合检索"
+          ],
+          "ranked": [
+            "库内单 SQL 混合检索",
+            "混合检索的动机",
+            "可复现性要求",
+            "证据页检索",
+            "阶跃星辰赛题要求"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 9.9,
+          "seekdb_search_ms": 32.42,
+          "e2e_ms": 46.1,
+          "rrf_scores": [
+            0.03279,
+            0.03226,
+            0.0308,
+            0.0308,
+            0.03078
+          ]
+        },
+        {
+          "query_id": "q-11",
+          "query": "Recall@K 是怎么定义的？",
+          "relevant": [
+            "Recall@K 指标"
+          ],
+          "ranked": [
+            "Recall@K 指标",
+            "seekdb-js 官方 SDK",
+            "SeekDB 定位与嵌入式部署",
+            "nDCG@K 指标",
+            "bge-small-zh 模型"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 7.3,
+          "seekdb_search_ms": 38.33,
+          "e2e_ms": 50.9,
+          "rrf_scores": [
+            0.03279,
+            0.032,
+            0.02991,
+            0.02983,
+            0.02957
+          ]
+        },
+        {
+          "query_id": "q-12",
+          "query": "nDCG 怎么计算排序质量？",
+          "relevant": [
+            "nDCG@K 指标"
+          ],
+          "ranked": [
+            "nDCG@K 指标",
+            "检索质量评测方法",
+            "单阶段标量过滤下推",
+            "候选集扩召回",
+            "量化报告要求"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 7.3,
+          "seekdb_search_ms": 23.1,
+          "e2e_ms": 34.5,
+          "rrf_scores": [
+            0.03279,
+            0.03125,
+            0.03105,
+            0.03058,
+            0.03054
+          ]
+        },
+        {
+          "query_id": "q-13",
+          "query": "候选集为什么要扩大到三倍？",
+          "relevant": [
+            "候选集扩召回"
+          ],
+          "ranked": [
+            "候选集扩召回",
+            "增量导入与集合切换",
+            "首次加载与预热",
+            "批处理向量化",
+            "Candidate 审核晋升"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 9.6,
+          "seekdb_search_ms": 25.94,
+          "e2e_ms": 40.7,
+          "rrf_scores": [
+            0.03279,
+            0.01613,
+            0.01587,
+            0.01563,
+            0.01538
+          ]
+        },
+        {
+          "query_id": "q-14",
+          "query": "Transformers.js 在浏览器里怎么跑 embedding？",
+          "relevant": [
+            "Transformers.js 浏览器推理"
+          ],
+          "ranked": [
+            "Transformers.js 浏览器推理",
+            "bge-small-zh 模型",
+            "seekdb 资源参数",
+            "库内单 SQL 混合检索",
+            "量化报告要求"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 11,
+          "seekdb_search_ms": 27.29,
+          "e2e_ms": 44.6,
+          "rrf_scores": [
+            0.03279,
+            0.03128,
+            0.03077,
+            0.03037,
+            0.02986
+          ]
+        },
+        {
+          "query_id": "q-15",
+          "query": "怎么获取 WebGPU 的显卡适配器？",
+          "relevant": [
+            "WebGPU 后端"
+          ],
+          "ranked": [
+            "WebGPU 后端",
+            "Delta HNSW 与 Snapshot HNSW",
+            "WASM 降级路径",
+            "seekdb-js 官方 SDK",
+            "WebGPU 优先与降级提示"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 11.5,
+          "seekdb_search_ms": 20.87,
+          "e2e_ms": 37.4,
+          "rrf_scores": [
+            0.03279,
+            0.03055,
+            0.03021,
+            0.03012,
+            0.02878
+          ]
+        },
+        {
+          "query_id": "q-16",
+          "query": "没有 WebGPU 的时候怎么降级？",
+          "relevant": [
+            "WASM 降级路径"
+          ],
+          "ranked": [
+            "WebGPU 优先与降级提示",
+            "WASM 降级路径",
+            "服务端不可用时的降级",
+            "WebGPU 后端",
+            "候选集扩召回"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 0.6309,
+          "query_embed_ms": 10.4,
+          "seekdb_search_ms": 38.58,
+          "e2e_ms": 53.4,
+          "rrf_scores": [
+            0.03252,
+            0.03252,
+            0.03175,
+            0.03031,
+            0.02927
+          ]
+        },
+        {
+          "query_id": "q-17",
+          "query": "INT8 量化的模型体积大概是多少？",
+          "relevant": [
+            "ONNX 量化精度"
+          ],
+          "ranked": [
+            "量化体积与压缩比",
+            "量化报告要求",
+            "ONNX 量化精度",
+            "bge-small-zh 模型",
+            "余弦距离与归一化"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 0.5,
+          "query_embed_ms": 8.9,
+          "seekdb_search_ms": 34.09,
+          "e2e_ms": 47.2,
+          "rrf_scores": [
+            0.03227,
+            0.03227,
+            0.03226,
+            0.03101,
+            0.03033
+          ]
+        },
+        {
+          "query_id": "q-18",
+          "query": "bge-small-zh 输出多少维向量？",
+          "relevant": [
+            "bge-small-zh 模型"
+          ],
+          "ranked": [
+            "bge-small-zh 模型",
+            "余弦距离与归一化",
+            "VSAG HNSW 向量索引",
+            "RRF 倒数排名融合",
+            "Delta HNSW 与 Snapshot HNSW"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 9.8,
+          "seekdb_search_ms": 19.76,
+          "e2e_ms": 34.1,
+          "rrf_scores": [
+            0.03279,
+            0.032,
+            0.03175,
+            0.03031,
+            0.02991
+          ]
+        },
+        {
+          "query_id": "q-19",
+          "query": "压缩比应该怎么统计？",
+          "relevant": [
+            "量化体积与压缩比"
+          ],
+          "ranked": [
+            "量化体积与压缩比",
+            "量化报告要求",
+            "nDCG@K 指标",
+            "PreparedContext 装配",
+            "RRF 倒数排名融合"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 8.6,
+          "seekdb_search_ms": 30.2,
+          "e2e_ms": 42.8,
+          "rrf_scores": [
+            0.03279,
+            0.03175,
+            0.01613,
+            0.01587,
+            0.01538
+          ]
+        },
+        {
+          "query_id": "q-20",
+          "query": "冷加载和预热后的延迟为什么要分开报告？",
+          "relevant": [
+            "首次加载与预热"
+          ],
+          "ranked": [
+            "首次加载与预热",
+            "禁用云端推理",
+            "原始数据与测试日志",
+            "PreparedContext 装配",
+            "Fork Diff Merge 数据工作流"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 10.7,
+          "seekdb_search_ms": 18.55,
+          "e2e_ms": 34.3,
+          "rrf_scores": [
+            0.03279,
+            0.0308,
+            0.02941,
+            0.02908,
+            0.02904
+          ]
+        },
+        {
+          "query_id": "q-21",
+          "query": "PowerContext 里的 Candidate 是什么？",
+          "relevant": [
+            "Candidate 审核晋升"
+          ],
+          "ranked": [
+            "Delta HNSW 与 Snapshot HNSW",
+            "seekdb-js 官方 SDK",
+            "PreparedContext 装配",
+            "Recall@K 指标",
+            "Source 证据源"
+          ],
+          "recall_at_5": 0,
+          "ndcg_at_5": 0,
+          "query_embed_ms": 6.6,
+          "seekdb_search_ms": 21.55,
+          "e2e_ms": 32.5,
+          "rrf_scores": [
+            0.0315,
+            0.03062,
+            0.03031,
+            0.03016,
+            0.03002
+          ]
+        },
+        {
+          "query_id": "q-22",
+          "query": "Handoff 交接包里包含哪些内容？",
+          "relevant": [
+            "Handoff 交接包"
+          ],
+          "ranked": [
+            "Handoff 交接包",
+            "PreparedContext 装配",
+            "Source 证据源",
+            "依赖清单与虚拟环境",
+            "环境变量配置"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 8.9,
+          "seekdb_search_ms": 28.13,
+          "e2e_ms": 40.9,
+          "rrf_scores": [
+            0.03279,
+            0.0315,
+            0.02947,
+            0.01613,
+            0.01613
+          ]
+        },
+        {
+          "query_id": "q-23",
+          "query": "上下文是怎么按预算裁剪装配的？",
+          "relevant": [
+            "PreparedContext 装配"
+          ],
+          "ranked": [
+            "PreparedContext 装配",
+            "上下文增量传输",
+            "Handoff 交接包",
+            "可复现性要求",
+            "Delta HNSW 与 Snapshot HNSW"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 9,
+          "seekdb_search_ms": 19.99,
+          "e2e_ms": 33.4,
+          "rrf_scores": [
+            0.03279,
+            0.032,
+            0.03102,
+            0.02941,
+            0.02783
+          ]
+        },
+        {
+          "query_id": "q-24",
+          "query": "多个子目录同名模块跑 pytest 会出什么问题？",
+          "relevant": [
+            "pytest 同名模块冲突"
+          ],
+          "ranked": [
+            "pytest 同名模块冲突",
+            "依赖清单与虚拟环境",
+            "Delta HNSW 与 Snapshot HNSW",
+            "高德赛题与 Skill 提交",
+            "阶跃星辰赛题要求"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 12.2,
+          "seekdb_search_ms": 44.05,
+          "e2e_ms": 60.4,
+          "rrf_scores": [
+            0.03279,
+            0.02964,
+            0.01613,
+            0.01587,
+            0.01563
+          ]
+        },
+        {
+          "query_id": "q-25",
+          "query": "数据库连不上时接口应该返回什么？",
+          "relevant": [
+            "服务端不可用时的降级"
+          ],
+          "ranked": [
+            "服务端不可用时的降级",
+            "可复现性要求",
+            "环境变量配置",
+            "WASM 降级路径",
+            "Transformers.js 浏览器推理"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 9.4,
+          "seekdb_search_ms": 20.62,
+          "e2e_ms": 33.7,
+          "rrf_scores": [
+            0.03279,
+            0.032,
+            0.0315,
+            0.03101,
+            0.02964
+          ]
+        },
+        {
+          "query_id": "q-26",
+          "query": "赛题对量化报告有哪些要求？",
+          "relevant": [
+            "量化报告要求"
+          ],
+          "ranked": [
+            "量化报告要求",
+            "增量导入与集合切换",
+            "阶跃星辰赛题要求",
+            "量化体积与压缩比",
+            "高德赛题与 Skill 提交"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 8.6,
+          "seekdb_search_ms": 31.77,
+          "e2e_ms": 44.4,
+          "rrf_scores": [
+            0.03279,
+            0.032,
+            0.03175,
+            0.02988,
+            0.02988
+          ]
+        },
+        {
+          "query_id": "q-27",
+          "query": "检索质量应该用什么指标衡量？",
+          "relevant": [
+            "检索质量评测方法"
+          ],
+          "ranked": [
+            "检索质量评测方法",
+            "Recall@K 指标",
+            "nDCG@K 指标",
+            "混合检索的动机",
+            "量化报告要求"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 9.4,
+          "seekdb_search_ms": 32.37,
+          "e2e_ms": 45.9,
+          "rrf_scores": [
+            0.03279,
+            0.03226,
+            0.03175,
+            0.03125,
+            0.03077
+          ]
+        },
+        {
+          "query_id": "q-28",
+          "query": "写入新文档后多久能被检索到？",
+          "relevant": [
+            "索引刷新后可见"
+          ],
+          "ranked": [
+            "索引刷新后可见",
+            "索引刷新与可见性",
+            "证据页检索",
+            "增量导入与集合切换",
+            "Recall@K 指标"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 9.7,
+          "seekdb_search_ms": 33.71,
+          "e2e_ms": 47,
+          "rrf_scores": [
+            0.03279,
+            0.03226,
+            0.03175,
+            0.02991,
+            0.02964
+          ]
+        },
+        {
+          "query_id": "q-29",
+          "query": "部署参数应该怎么配置才能复现？",
+          "relevant": [
+            "可复现性要求",
+            "环境变量配置"
+          ],
+          "ranked": [
+            "可复现性要求",
+            "环境变量配置",
+            "高德赛题与 Skill 提交",
+            "seekdb 资源参数",
+            "SeekDB 定位与嵌入式部署"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 9,
+          "seekdb_search_ms": 20.14,
+          "e2e_ms": 32.8,
+          "rrf_scores": [
+            0.03252,
+            0.03132,
+            0.02986,
+            0.02951,
+            0.02921
+          ]
+        },
+        {
+          "query_id": "q-30",
+          "query": "端到端延迟怎么拆阶段计时？",
+          "relevant": [
+            "端到端延迟拆分"
+          ],
+          "ranked": [
+            "端到端延迟拆分",
+            "批处理向量化",
+            "WASM 降级路径",
+            "WebGPU 优先与降级提示",
+            "WebGPU 后端"
+          ],
+          "recall_at_5": 1,
+          "ndcg_at_5": 1,
+          "query_embed_ms": 8.4,
+          "seekdb_search_ms": 20.29,
+          "e2e_ms": 32.3,
+          "rrf_scores": [
+            0.03279,
+            0.03226,
+            0.03054,
+            0.03037,
+            0.02991
+          ]
+        }
+      ]
+    }
+  ]
+}

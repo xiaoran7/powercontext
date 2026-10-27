@@ -126,4 +126,6 @@ def test_stepfun_insert_and_in_seekdb_hybrid_search():
 
     bench_resp = client.get("/api/benchmark")
     assert bench_resp.status_code == 200
-    assert len(bench_resp.json()["quantization_comparison"]) == 4
+    bench = bench_resp.json()
+    assert "measured" in bench
+    assert isinstance(bench.get("runs"), list)

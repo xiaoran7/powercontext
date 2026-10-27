@@ -1,12 +1,13 @@
 {
   "name": "stepfun-seekdb-webgpu-kb",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
-  "description": "Browser-side WebGPU/WASM embedding + SeekDB in-database hybrid search (official seekdb JS SDK adapter)",
+  "description": "Browser-side WebGPU/WASM embedding + SeekDB in-database hybrid search (official seekdb-js SDK server)",
   "type": "module",
   "scripts": {
     "start": "node server_seekdb_js.mjs",
-    "check": "node server_seekdb_js.mjs"
+    "check": "node benchmark/selfcheck_seekdb_js.mjs",
+    "bench": "node benchmark/selfcheck_seekdb_js.mjs"
   },
   "engines": {
     "node": ">=18"

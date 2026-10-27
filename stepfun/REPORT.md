@@ -1,48 +1,70 @@
 # 端侧 AI 推理性能优化与 SeekDB 混合检索技术说明（一页技术报告）
 
+> 本页所有性能与质量数字均来自**提交应用在真实浏览器中的实际运行**：
+> 打开 `http://127.0.0.1:8088/bench` 点击「开始实测」后，前端把逐条查询结果写入
+> `benchmark/results/raw-*.json` 并汇总到 `benchmark/results/summary.json`，
+> 本页按该汇总填写。复现方式与设备信息见文末「复现与数据来源」。
+
 ## 一、模型选型与量化方案（Model & Quantization）
 
-- **开源模型来源与版本**：选用 HuggingFace / ModelScope 公开开源模型 **`Xenova/bge-small-zh-v1.5`**（基于 `BAAI/bge-small-zh-v1.5`，4 层 Transformer 架构，输出维度 **512**），端侧运行时为 **Transformers.js v3.3.3 (`@huggingface/transformers`) + ONNX Runtime Web v1.20**。
-- **量化处理方式与体积压缩比**：
-  - 对模型权重分别采用 **FP32 全精度基线（`model.onnx`）**、**FP16 半精度量化（`model_fp16.onnx`）** 与 **INT8 动态量化（`model_quantized.onnx`, `dtype: "q8"`）**。
-  - 按同一口径统计实际加载的 ONNX 模型文件总体积并计算 `压缩比 = 量化前体积 / 量化后体积`：
-    - **FP32 量化前基线**：`94.8 MB`（压缩比 `1.00x`）
-    - **FP16 半精度方案**：`47.6 MB`（压缩比 **`1.99x`**，体积缩减 49.8%）
-    - **INT8 (`q8`) 方案**：**`24.2 MB`**（压缩比 **`3.92x`**，体积缩减 74.5%）
+- **开源模型来源与版本**：HuggingFace 公开模型 **`Xenova/bge-small-zh-v1.5`**（`BAAI/bge-small-zh-v1.5` 的 ONNX 版本，4 层 Transformer，输出 **512** 维），仓库 revision `75c43b0`（2025-07-22）。端侧运行时为 **Transformers.js v3.3.3（`@huggingface/transformers`）+ ONNX Runtime Web**。
+- **量化方案**：应用顶部下拉框直接切换 `q8`（INT8 动态量化，`model_quantized.onnx`）、`fp16`（`model_fp16.onnx`）、`fp32`（`model.onnx`），通过 Transformers.js 的 `dtype` 参数显式加载对应权重文件。
+- **体积与压缩比（按 ONNX 权重实测字节数）**：详见下表 `模型体积` 列；`压缩比 = FP32 体积 / 该配置体积`。
 
----
+## 二、端侧运行时、WebGPU 优先与 WASM 自动降级
 
-## 二、端侧运行时、WebGPU 优先选择与 WASM 自动降级（Edge Runtime & Fallback）
+1. **WebGPU 显式探测**：启动时调用 `navigator.gpu.requestAdapter()`，可用即向 `pipeline(..., { device: 'webgpu', dtype })` 显式注入后端，界面徽章显示 `WebGPU 已加速` 与显卡型号。
+2. **WASM 自动降级**：无 `navigator.gpu` / 适配器为空 / WebGPU 管线初始化异常时，自动改用 `{ device: 'wasm' }` 重新加载，徽章切换为 `WASM CPU 降级模式`，核心流程（导入 → 向量化 → 写入 → 检索）不受影响。
+3. **验证方式**：`/bench` 页的「推理设备」可强制指定 `webgpu` / `wasm`，两组结果都记录在汇总里。
 
-1. **WebGPU 显式探测与优先绑定**：应用启动时通过 `navigator.gpu.requestAdapter()` 主动探测硬件适配器，可用时显式向 `pipeline('feature-extraction', MODEL_ID, { device: 'webgpu', dtype: 'q8' })` 注入 `device: 'webgpu'`，利用 GPU Compute Shader 并行执行 MatMul 与 LayerNorm。
-2. **WASM 自动无缝降级**：当运行环境不支持 `navigator.gpu`、请求适配器为空或 WebGPU 管线初始化异常时，自动捕获异常并降级至 `{ device: 'wasm' }`（WebAssembly SIMD 多线程后端），同时在界面顶部状态徽章与实时审计控制台中明确提示当前使用的推理后端（`WebGPU 已加速` vs `WASM CPU 降级模式`）。
+## 三、SeekDB 存储、库内混合检索与状态管理
 
----
+1. **接入方式**：提供两套等价服务端，均通过官方 seekdb-js 生态接入 MySQL 协议：
+   - `server.py`（Python / pymysql，`http://127.0.0.1:8088`）
+   - [`server_seekdb_js.mjs`](../server_seekdb_js.mjs)（**官方 npm 包 `seekdb` 的 `SeekdbClient`**，`http://127.0.0.1:8089`）
+   > 题面写的 `seekdb-js` 即该 SDK 的项目名，npm 发布的包名为 `seekdb`（旧包名 `seekdb-js` 已于 2025-12-05 下架）。
+2. **表结构与索引**：`stepfun_knowledge_base` 保存 `title`、`content`、`category`、`collection_id`、`embedding VECTOR(512)`、`quant_mode`、`device_source`、`client_ms`，并建立
+   - `VECTOR INDEX idx_stepfun_hnsw (embedding) WITH (distance=cosine, type=hnsw, lib=vsag)`
+   - `FULLTEXT INDEX idx_stepfun_fts (title, content) WITH PARSER ik`
+3. **库内混合检索（禁止客户端拼合）**：`POST /api/search` 的 `hybrid` 模式用**一条 SQL** 完成：
+   向量子查询（`COSINE_DISTANCE ... APPROXIMATE` + `ROW_NUMBER()`）与全文子查询
+   （`MATCH ... AGAINST` + `ROW_NUMBER()`）`UNION ALL` 后，在库内 `GROUP BY id`、
+   `SUM(1.0/(60+rank)) AS rrf_score` 融合并 `ORDER BY rrf_score DESC LIMIT K`，客户端只接收最终结果。
+4. **增量写入、索引刷新与会话状态**：`POST /api/documents`、`/api/documents/batch` 支持单条与批量写入；
+   `POST /api/reindex` 读回 `SHOW INDEX` 与文档计数；`GET/DELETE /api/sessions/{id}` 维护多轮查询上下文。
+   批量写入会临时调大 `ob_query_timeout`，避免 seekdb 默认 10s 查询超时。
 
-## 三、SeekDB 存储、数据库内混合检索与状态管理（SeekDB Hybrid Search & State）
+## 四、性能与检索质量实测（由 `/bench` 在浏览器内产生）
 
-1. **集合与表结构**：在 SeekDB（默认本地 `127.0.0.1:2881`，可用 `SEEKDB_HOST` 覆盖）创建 `stepfun_knowledge_base` 表，保存 `id`、`collection_id`（集合标识）、`title`、`content`、`category`、`embedding VECTOR(512)`、`quant_mode`、`device_source` 等元数据，同时建立：
-   - **VSAG HNSW 向量索引**：`VECTOR KEY idx_stepfun_hnsw (embedding) WITH (DISTANCE=COSINE, TYPE=HNSW, LIB=VSAG, M=16, EF_CONSTRUCTION=200, EF_SEARCH=64)`
-   - **IK 分词全文索引**：`FULLTEXT KEY idx_stepfun_fts (title, content) WITH PARSER ik`
-2. **100% 在 SeekDB 内核完成的混合检索（严禁客户端拼合）**：
-   - 通过单条 SQL 在 SeekDB 内核中同时触发向量索引子查询（`COSINE_DISTANCE` + `ROW_NUMBER() OVER (ORDER BY distance ASC)`）与全文索引子查询（`MATCH(title, content) AGAINST` + `ROW_NUMBER() OVER (ORDER BY fts_score DESC)`），并直接在数据库内执行 `GROUP BY id`、`SUM(1.0 / (60 + rank)) AS rrf_score` 融合计分与 `ORDER BY rrf_score DESC LIMIT K` 排序输出，绝不在客户端分别拉取两路结果后自行拼合。
-3. **增量写入、索引刷新与集合/会话状态管理**：
-   - 支持单条与批量增量导入（`POST /api/documents`、`POST /api/documents/batch`），写入后立即可进入 Delta HNSW 与全文索引并通过 `POST /api/reindex` 校验刷新状态；支持按 `collection_id` 切换知识库集合，并通过 `/api/sessions/{session_id}` 管理多轮查询会话上下文。
+<!-- BENCHMARK_RESULTS_START -->
+- **测试环境**：`Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36`；WebGPU 可用：True；SeekDB 本地实例（127.0.0.1:2881）；语料 48 篇 / 查询 30 条，Top-K = 5。
+- **运行时间**：2026-10-27T13:55:59.360Z → 2026-10-27T13:57:11.497Z（原始数据 `benchmark/results/raw-20261027T215711.json`）。
 
----
+| 配置 | 模型体积 (MiB) | 压缩比 | 冷加载 (ms) | 向量化吞吐 (docs/s) | seekdb 检索 P50 (ms) | 端到端 P50 (ms) | Recall@5 | nDCG@5 |
+| :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| INT8 (q8) + WEBGPU | 22.90 | 3.95x | 13982 | 10.7 | 21.49 | 96.30 | 0.7667 | 0.6749 |
+| FP16 + WEBGPU | 45.30 | 2.00x | 14218 | 103.4 | 26.09 | 37.55 | 0.9667 | 0.9377 |
+| FP32 + WEBGPU | 90.46 | 1.00x | 27967 | 136.4 | 24.03 | 35.50 | 0.9667 | 0.9377 |
+| INT8 (q8) + WASM | 22.90 | 3.95x | 82 | 33.6 | 27.71 | 41.85 | 0.9667 | 0.9377 |
 
-## 四、基础性能优化与实测结果对比（Benchmark Evaluation）
+- **口径**：模型体积按 ONNX 权重实测字节数（MiB = 1024²）；压缩比以 FP32 为基线；冷加载包含权重下载/读取与执行图初始化（可用浏览器缓存，首次运行会明显更慢）；吞吐为 48 篇文档连续推理的均值；seekdb 检索为服务端单条混合 SQL 往返 P50；端到端 = 查询向量化 + 检索。每组配置在计时前先预热 3 次推理，避免 WebGPU 首次 shader 编译污染延迟数据。
 
-- **测试条件**：Chrome 134 / Edge 134（Windows 11，WebGPU 后端 vs WASM 后端），固定 50 条中文技术文档语料与 50 条评测查询集，SeekDB v1.4.0.0（本地 `127.0.0.1:2881`，`scripts/start_seekdb.sh` 拉起），重复测试 10 次取中位数（P50）：
+> **关于 INT8 + WebGPU 的实测异常（如实记录）**：同一份语料下，INT8 动态量化在 WebGPU 后端的
+> Recall@5 只有 0.7667（其余三组均为 0.9667），吞吐也只有 FP16 的约 1/10。该结果在两次独立运行中
+> 可复现，属于 ONNX Runtime Web 的 WebGPU 执行器对动态量化权重的算子回退与精度损失，不是计时噪音。
+> 因此应用默认策略为：**WebGPU 环境默认 FP16，WASM 环境默认 INT8**，用户仍可在页面顶部手动切换。
+> 若只追求最小体积（22.9 MiB，压缩比 3.95x），INT8 + WASM 同时保住了 0.9667 的 Recall@5，是纯体积最优组合。
 
-| 配置 | 模型体积 (压缩比) | 向量化吞吐 (docs/s) | seekdb 检索延迟 (P50) | 端到端查询延迟 (预热后 P50 / 首次冷加载) | 检索质量 (Recall@5 / nDCG@5) |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **量化前基线 (FP32 + WebGPU)** | `94.8 MB` (`1.00x`) | `65.8 docs/s` (`15.2 ms/条`) | `11.4 ms` | `27.8 ms` / `1650 ms` | `Recall@5 = 0.98` / `nDCG@5 = 0.954` |
-| **FP16 + WebGPU** | `47.6 MB` (`1.99x`) | `105.3 docs/s` (`9.5 ms/条`) | `11.4 ms` | `22.1 ms` / `890 ms` | `Recall@5 = 0.98` / `nDCG@5 = 0.952` |
-| **INT8 (`q8`) + WebGPU（推荐）** | **`24.2 MB` (`3.92x`)** | **`147.1 docs/s` (`6.8 ms/条`)** | **`11.4 ms`** | **`19.8 ms` / `480 ms`** | **`Recall@5 = 0.96` / `nDCG@5 = 0.941`** |
-| **INT8 (`q8`) + WASM（降级）** | `24.2 MB` (`3.92x`) | `54.3 docs/s` (`18.4 ms/条`) | `11.4 ms` | `31.5 ms` / `520 ms` | `Recall@5 = 0.96` / `nDCG@5 = 0.941` |
+<!-- BENCHMARK_RESULTS_END -->
 
-- **混合检索 vs 单路检索质量对比（INT8 `q8` 模型下）**：
-  - **SeekDB 混合检索（HNSW + Fulltext SQL RRF）**：`Recall@1 = 0.92`，`Recall@5 = 0.96`，`nDCG@5 = 0.941`
-  - **纯向量检索（Vector-Only HNSW）**：`Recall@1 = 0.84`，`Recall@5 = 0.92`，`nDCG@5 = 0.884`
-  - **纯全文检索（Fulltext-Only BM25）**：`Recall@1 = 0.76`，`Recall@5 = 0.86`，`nDCG@5 = 0.812`
+## 五、复现与数据来源
+
+- **语料**：`benchmark/corpus.json`（48 篇中文技术文档、30 条查询、每条查询人工标注 1–2 篇相关文档），
+  由 `benchmark/build_corpus.py` 生成，随仓库提交。
+- **运行**：`python server.py` 后访问 `http://127.0.0.1:8088/bench`，点击「开始实测」。
+  页面会对每组配置重置知识库、重新写入同一份语料，再逐条执行库内混合检索。
+- **指标口径**：Recall@5 = 前 5 条命中人工标注相关文档的比例；nDCG@5 按二值相关度计算并做理想 DCG 归一化。
+- **计时口径**：冷加载 = `pipeline()` 从调用到返回（可用浏览器缓存，首次运行会包含权重下载）；
+  向量化吞吐 = 48 篇文档连续推理；seekdb 检索延迟 = 服务端单条混合 SQL 往返；端到端 = 查询向量化 + 检索。
+- **原始数据**：`benchmark/results/raw-*.json` 保存每次运行的逐条查询结果（含排名、RRF 分数、各阶段耗时），
+  `summary.json` 为汇总；`/api/benchmark` 原样读取该汇总返回，不在服务端硬编码任何数字。

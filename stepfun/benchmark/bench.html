@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>端侧量化与检索质量实测 · StepFun × SeekDB</title>
+  <style>
+    :root {
+      --primary: #0284c7; --primary-light: #e0f2fe; --border: #e2e8f0;
+      --text-main: #0f172a; --text-muted: #64748b; --success: #10b981; --warning: #f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, "Segoe UI", "Plus Jakarta Sans", sans-serif;
+      background: #f8fafc; color: var(--text-main); padding: 28px; line-height: 1.55;
+    }
+    .wrap { max-width: 1180px; margin: 0 auto; }
+    h1 { font-size: 22px; margin-bottom: 6px; }
+    .sub { color: var(--text-muted); font-size: 13px; margin-bottom: 18px; }
+    .card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin-bottom: 16px; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    button, select {
+      font: inherit; font-size: 13px; padding: 7px 14px; border-radius: 8px;
+      border: 1px solid var(--border); background: #fff; cursor: pointer;
+    }
+    button.primary { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600; }
+    button:disabled { opacity: .55; cursor: not-allowed; }
+    code { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 12px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 10px; }
+    th, td { border-bottom: 1px solid var(--border); padding: 7px 8px; text-align: left; }
+    th { background: #f1f5f9; font-weight: 600; }
+    td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    #log {
+      background: #0f172a; color: #cbd5e1; border-radius: 8px; padding: 12px 14px;
+      font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11.5px;
+      max-height: 260px; overflow: auto; white-space: pre-wrap;
+    }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; background: var(--primary-light); color: var(--primary); font-weight: 600; }
+    .badge.ok { background: #ecfdf5; color: var(--success); }
+    .badge.warn { background: #fffbeb; color: var(--warning); }
+    .hint { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>端侧量化与检索质量实测</h1>
+  <div class="sub">
+    在浏览器本地对固定语料执行 embedding 推理，经 SeekDB 库内混合检索评测 Recall@5 / nDCG@5。
+    结果原样写入 <code>benchmark/results/</code>，供赛题 3.2 节复现核对。
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <label>推理设备
+        <select id="device">
+          <option value="auto">自动（优先 WebGPU，失败降级 WASM）</option>
+          <option value="webgpu">强制 WebGPU</option>
+          <option value="wasm">强制 WASM</option>
+        </select>
+      </label>
+      <label>量化组合
+        <select id="dtypes">
+          <option value="q8,fp16,fp32,wasm">INT8(WebGPU) + FP16 + FP32 + INT8(WASM)</option>
+          <option value="q8">仅 INT8 (q8)</option>
+          <option value="q8,wasm">INT8 + INT8(WASM)</option>
+        </select>
+      </label>
+      <button id="btn-run" class="primary">开始实测</button>
+      <button id="btn-download" disabled>下载原始结果 JSON</button>
+      <span id="stat" class="hint"></span>
+    </div>
+    <div class="hint">
+      计时口径：模型冷加载 = 首次权重下载与执行图编译；向量化吞吐 = 48 篇文档连续推理；seekdb 检索延迟 = 服务端单条混合 SQL 往返；端到端 = 查询向量化 + 检索。
+      每项重复测量取中位数，原始逐条数据会随结果一并保存。
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="font-size:13px;font-weight:600;margin-bottom:6px;">实测结果</div>
+    <table id="tbl">
+      <thead>
+        <tr>
+          <th>配置</th><th>模型体积</th><th>冷加载</th><th>向量化吞吐</th>
+          <th>seekdb 检索 P50</th><th>端到端 P50</th><th>Recall@5</th><th>nDCG@5</th>
+        </tr>
+      </thead>
+      <tbody><tr><td colspan="8" style="color:var(--text-muted);">尚未运行</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px;">运行日志</div>
+    <div id="log"></div>
+  </div>
+</div>
+
+<script type="module">
+import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.3.3';
+
+env.allowLocalModels = false;
+env.useBrowserCache = true;
+
+const MODEL_ID = 'Xenova/bge-small-zh-v1.5';
+const TOP_K = 5;
+const logBox = document.getElementById('log');
+const statEl = document.getElementById('stat');
+let rawResult = null;
+
+function log(msg) {
+  const line = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  logBox.textContent += line + '\n';
+  logBox.scrollTop = logBox.scrollHeight;
+}
+const median = (arr) => {
+  const s = [...arr].sort((a, b) => a - b);
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+};
+const round = (x, d = 2) => Number(x.toFixed(d));
+
+async function detectWebGPU() {
+  if (!('gpu' in navigator)) return false;
+  try {
+    return !!(await navigator.gpu.requestAdapter());
+  } catch {
+    return false;
+  }
+}
+
+async function loadPipeline(device, dtype) {
+  let modelBytes = 0;
+  let downloadMs = 0;
+  const t0 = performance.now();
+  const pipe = await pipeline('feature-extraction', MODEL_ID, {
+    device,
+    dtype,
+    progress_callback: (p) => {
+      if ((p.file || '').includes('.onnx') && typeof p.total === 'number') {
+        if (!modelBytes || p.loaded >= p.total) fileSizes.set(p.file, p.total);
+        // 权重下载/读取阶段结束的时刻（首个 ready 前的最后一个 progress）
+        downloadMs = performance.now() - t0;
+      }
+    },
+  });
+  const coldMs = performance.now() - t0;
+  return { pipe, coldMs, downloadMs };
+}
+
+const fileSizes = new Map();
+
+async function embed(pipe, text) {
+  const t0 = performance.now();
+  const out = await pipe(text, { pooling: 'mean', normalize: true });
+  const ms = performance.now() - t0;
+  return { vector: Array.from(out.data), ms };
+}
+
+function recallAtK(rankedTitles, relevantTitles, k) {
+  const top = rankedTitles.slice(0, k);
+  const hit = top.filter((t) => relevantTitles.has(t)).length;
+  return hit / relevantTitles.size;
+}
+
+function ndcgAtK(rankedTitles, relevantTitles, k) {
+  let dcg = 0;
+  rankedTitles.slice(0, k).forEach((t, i) => {
+    if (relevantTitles.has(t)) dcg += 1 / Math.log2(i + 2);
+  });
+  let idcg = 0;
+  for (let i = 0; i < Math.min(k, relevantTitles.size); i += 1) idcg += 1 / Math.log2(i + 2);
+  return idcg === 0 ? 1 : dcg / idcg;
+}
+
+async function runOneConfig({ device, dtype, label, corpus, titleById, collection }) {
+  log(`=== ${label}：device=${device}, dtype=${dtype} ===`);
+  fileSizes.clear();
+  const { pipe, coldMs, downloadMs } = await loadPipeline(device, dtype);
+  const modelBytes = [...fileSizes.values()].reduce((a, b) => a + b, 0);
+  log(`模型加载完成：冷加载 ${round(coldMs)} ms（其中权重下载/读取 ${round(downloadMs)} ms），ONNX 权重体积 ${round(modelBytes / 1048576, 2)} MB`);
+
+  // 预热：WebGPU 首次执行会编译 shader，预热若干次后再计时，
+  // 保证各组配置的吞吐与延迟是在同一「预热后」口径下比较。
+  const warmStart = performance.now();
+  for (let i = 0; i < 3; i += 1) {
+    await embed(pipe, corpus.documents[i].title + corpus.documents[i].content);
+  }
+  const warmupMs = performance.now() - warmStart;
+  log(`预热完成：3 次推理 ${round(warmupMs)} ms`);
+
+  // 1) 文档向量化（连续推理，测量吞吐）
+  const docTimes = [];
+  const docs = [];
+  for (const doc of corpus.documents) {
+    const text = `${doc.title}\n${doc.content}`;
+    const { vector, ms } = await embed(pipe, text);
+    docTimes.push(ms);
+    docs.push({
+      title: doc.title,
+      content: doc.content,
+      category: doc.category,
+      collection_id: collection,
+      embedding: vector,
+      quant_mode: dtype,
+      device_source: device,
+      client_ms: round(ms, 2),
+    });
+  }
+  const totalEmbedMs = docTimes.reduce((a, b) => a + b, 0);
+  const throughput = (docs.length / totalEmbedMs) * 1000;
+  log(`文档向量化：${docs.length} 篇，总耗时 ${round(totalEmbedMs)} ms，吞吐 ${round(throughput, 1)} docs/s`);
+
+  // 2) 写入 SeekDB（先清空，保证每一组配置评测同一份语料）
+  await fetch('/api/reset', { method: 'POST' });
+  const tWrite = performance.now();
+  const writeResp = await fetch('/api/documents/batch', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ collection_id: collection, documents: docs }),
+  });
+  const writeData = await writeResp.json();
+  log(`写入 SeekDB：${writeData.count} 篇，耗时 ${round(performance.now() - tWrite)} ms`);
+
+  // 3) 逐条查询：库内混合检索 + 端到端计时 + 质量指标
+  const rows = [];
+  const perQuery = [];
+  let searchMs = [];
+  let e2eMs = [];
+  let recallSum = 0;
+  let ndcgSum = 0;
+
+  for (const q of corpus.queries) {
+    const { vector, ms: qMs } = await embed(pipe, q.text);
+    const t0 = performance.now();
+    const resp = await fetch('/api/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query_text: q.text,
+        embedding: vector,
+        top_k: TOP_K,
+        mode: 'hybrid',
+        collection_id: collection,
+        session_id: `bench-${dtype}-${device}`,
+        client_ms: round(qMs, 2),
+      }),
+    });
+    const data = await resp.json();
+    const totalMs = performance.now() - t0 + qMs;
+    searchMs.push(data.seekdb_search_ms);
+    e2eMs.push(totalMs);
+
+    const relevantTitles = new Set(q.relevant.map((id) => titleById.get(id)));
+    const ranked = (data.results || []).map((r) => r.title);
+    const recall = recallAtK(ranked, relevantTitles, TOP_K);
+    const ndcg = ndcgAtK(ranked, relevantTitles, TOP_K);
+    recallSum += recall;
+    ndcgSum += ndcg;
+    perQuery.push({
+      query_id: q.id,
+      query: q.text,
+      relevant: [...relevantTitles],
+      ranked,
+      recall_at_5: round(recall, 4),
+      ndcg_at_5: round(ndcg, 4),
+      query_embed_ms: round(qMs, 2),
+      seekdb_search_ms: data.seekdb_search_ms,
+      e2e_ms: round(totalMs, 2),
+      rrf_scores: (data.results || []).map((r) => r.rrf_score),
+    });
+  }
+
+  rows.push({
+    label,
+    device,
+    dtype,
+    model_size_mb: round(modelBytes / 1048576, 2),
+    cold_load_ms: round(coldMs),
+    download_ms: round(downloadMs),
+    init_ms: round(coldMs - downloadMs),
+    warmup_ms: round(warmupMs),
+    embed_total_ms: round(totalEmbedMs),
+    throughput_docs_per_sec: round(throughput, 1),
+    embed_p50_ms: round(median(docTimes)),
+    seekdb_p50_ms: round(median(searchMs)),
+    seekdb_p90_ms: round([...searchMs].sort((a, b) => a - b)[Math.floor(searchMs.length * 0.9)] ?? 0),
+    e2e_p50_ms: round(median(e2eMs)),
+    recall_at_5: round(recallSum / corpus.queries.length, 4),
+    ndcg_at_5: round(ndcgSum / corpus.queries.length, 4),
+    per_query: perQuery,
+  });
+  log(`检索质量：Recall@5=${round(recallSum / corpus.queries.length, 4)}，nDCG@5=${round(ndcgSum / corpus.queries.length, 4)}`);
+  renderRow(rows[rows.length - 1]);
+  return rows[0];
+}
+
+let resultRows = [];
+function renderRow(r) {
+  resultRows.push(r);
+  const tbody = document.querySelector('#tbl tbody');
+  if (resultRows.length === 1) tbody.innerHTML = '';
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td>${r.label}</td>
+    <td class="num">${r.model_size_mb} MB</td>
+    <td class="num">${r.cold_load_ms} ms</td>
+    <td class="num">${r.throughput_docs_per_sec} docs/s</td>
+    <td class="num">${r.seekdb_p50_ms} ms</td>
+    <td class="num">${r.e2e_p50_ms} ms</td>
+    <td class="num">${r.recall_at_5}</td>
+    <td class="num">${r.ndcg_at_5}</td>`;
+  tbody.appendChild(tr);
+}
+
+document.getElementById('btn-run').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-run');
+  btn.disabled = true;
+  resultRows = [];
+  const chosen = document.getElementById('dtypes').value.split(',');
+  const wantedDevice = document.getElementById('device').value;
+  const webgpuOk = await detectWebGPU();
+  log(`WebGPU 可用性：${webgpuOk ? '可用' : '不可用'}`);
+
+  const corpus = await fetch('/benchmark/corpus.json').then((r) => r.json());
+  const titleById = new Map(corpus.documents.map((d) => [d.id, d.title]));
+  log(`语料加载：${corpus.documents.length} 篇文档，${corpus.queries.length} 条查询`);
+
+  const configs = [];
+  for (const token of chosen) {
+    if (token === 'wasm') {
+      configs.push({ device: 'wasm', dtype: 'q8', label: 'INT8 (q8) + WASM' });
+    } else {
+      const device = wantedDevice === 'wasm' ? 'wasm' : 'webgpu';
+      if (device === 'webgpu' && !webgpuOk) {
+        log(`WebGPU 不可用，${token} 跳过（仅保留 WASM 路径）`);
+        continue;
+      }
+      const name = { q8: 'INT8 (q8)', fp16: 'FP16', fp32: 'FP32' }[token] || token.toUpperCase();
+      configs.push({ device, dtype: token, label: `${name} + ${device.toUpperCase()}` });
+    }
+  }
+  if (!configs.length) {
+    configs.push({ device: 'wasm', dtype: 'q8', label: 'INT8 (q8) + WASM' });
+  }
+
+  const startedAt = new Date().toISOString();
+  const deviceInfo = navigator.userAgent;
+  try {
+    for (const cfg of configs) {
+      statEl.textContent = `正在评测 ${cfg.label} ...`;
+      await runOneConfig({
+        ...cfg,
+        corpus,
+        titleById,
+        collection: `bench_${cfg.dtype}_${cfg.device}`,
+      });
+    }
+
+    rawResult = {
+      model: MODEL_ID,
+      top_k: TOP_K,
+      corpus_size: corpus.documents.length,
+      query_count: corpus.queries.length,
+      started_at: startedAt,
+      finished_at: new Date().toISOString(),
+      user_agent: deviceInfo,
+      webgpu_available: webgpuOk,
+      runs: resultRows,
+    };
+    const saveResp = await fetch('/api/benchmark/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(rawResult),
+    });
+    const saveData = await saveResp.json();
+    log(`结果已保存：${JSON.stringify(saveData)}`);
+    document.getElementById('btn-download').disabled = false;
+    statEl.textContent = `完成 ${resultRows.length} 组配置`;
+  } catch (err) {
+    log(`运行失败：${err.message}`);
+    console.error(err);
+    statEl.textContent = '运行失败，见日志';
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+document.getElementById('btn-download').addEventListener('click', () => {
+  if (!rawResult) return;
+  const blob = new Blob([JSON.stringify(rawResult, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'stepfun-benchmark-raw.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,507 @@
+{
+  "model": "Xenova/bge-small-zh-v1.5",
+  "dimension": 512,
+  "documents": [
+    {
+      "id": "doc-01",
+      "title": "SeekDB 定位与嵌入式部署",
+      "category": "kernel",
+      "content": "SeekDB 是 OceanBase 推出的轻量级 AI 原生数据库，单二进制交付，支持嵌入式与本地 server 两种运行形态，默认监听 2881 端口并使用 MySQL 协议接入。"
+    },
+    {
+      "id": "doc-02",
+      "title": "VSAG HNSW 向量索引",
+      "category": "kernel",
+      "content": "SeekDB 内核集成 VSAG 向量引擎，支持 HNSW 图索引与余弦距离，通过 VECTOR INDEX 语法在建表时声明，查询使用 COSINE_DISTANCE 配合 APPROXIMATE 走近似最近邻。"
+    },
+    {
+      "id": "doc-03",
+      "title": "Delta HNSW 与 Snapshot HNSW",
+      "category": "kernel",
+      "content": "SeekDB 的向量索引分为内存中的增量 Delta HNSW 与持久化的基线 Snapshot HNSW，写入提交后先进入 Delta，后台异步下刷合并，查询时并行读取两路索引归并结果。"
+    },
+    {
+      "id": "doc-04",
+      "title": "IK 中文分词全文索引",
+      "category": "kernel",
+      "content": "SeekDB 的 FULLTEXT 索引支持 WITH PARSER ik 使用 IK 中文分词器，配合 MATCH ... AGAINST 自然语言模式做 BM25 关键词检索，适合中文技术文档。"
+    },
+    {
+      "id": "doc-05",
+      "title": "单阶段标量过滤下推",
+      "category": "kernel",
+      "content": "SeekDB 在优化器阶段将 WHERE 标量条件与向量距离计算合并下推，避免先取近邻再过滤导致 TopK 被过滤空的经典问题。"
+    },
+    {
+      "id": "doc-06",
+      "title": "Fork Diff Merge 数据工作流",
+      "category": "kernel",
+      "content": "SeekDB 提供 FORK DATABASE 与 FORK TABLE 的写时复制沙箱，Agent 可以在隔离分支上试写，再通过 Diff 比较和 Merge 采纳，无需复制全量数据。"
+    },
+    {
+      "id": "doc-07",
+      "title": "seekdb-js 官方 SDK",
+      "category": "kernel",
+      "content": "seekdb-js 是 SeekDB 的官方 JavaScript/TypeScript SDK，现以 npm 包名 seekdb 发布，提供 SeekdbClient 的 execute 方法执行原生 SQL，并支持服务端与嵌入式两种模式。"
+    },
+    {
+      "id": "doc-08",
+      "title": "seekdb 资源参数",
+      "category": "kernel",
+      "content": "在内存受限环境启动 SeekDB 需要显式设置 datafile_size、log_disk_size 与 memory_limit 三个参数，否则默认资源需求过高会报 OB_RESOURCE_UNIT_VALUE_INVALID。"
+    },
+    {
+      "id": "doc-09",
+      "title": "余弦距离与归一化",
+      "category": "retrieval",
+      "content": "余弦相似度衡量两个向量方向的一致性，Embedding 模型通常输出归一化向量，此时余弦距离与内积排序等价，距离越小表示语义越接近。"
+    },
+    {
+      "id": "doc-10",
+      "title": "RRF 倒数排名融合",
+      "category": "retrieval",
+      "content": "Reciprocal Rank Fusion 用 1/(k+rank) 对各路召回的名次求和，k 常取 60，可以融合向量检索与全文检索两路结果而不需要分数归一化。"
+    },
+    {
+      "id": "doc-11",
+      "title": "混合检索的动机",
+      "category": "retrieval",
+      "content": "纯语义检索容易漏掉专有名词与型号，纯关键词检索缺乏语义泛化能力，混合检索同时利用两路信号并通过融合排序提升召回与排序质量。"
+    },
+    {
+      "id": "doc-12",
+      "title": "库内单 SQL 混合检索",
+      "category": "retrieval",
+      "content": "赛题要求混合检索由数据库完成，不得在客户端分别获取两路结果后自行拼合，因此需要用一条 SQL 通过 UNION ALL 与 GROUP BY 在库内完成融合。"
+    },
+    {
+      "id": "doc-13",
+      "title": "Recall@K 指标",
+      "category": "retrieval",
+      "content": "Recall@K 表示前 K 个检索结果中覆盖了多少比例的相关文档，是检索质量评估中最直观的指标，常与人工标注的相关集配合使用。"
+    },
+    {
+      "id": "doc-14",
+      "title": "nDCG@K 指标",
+      "category": "retrieval",
+      "content": "nDCG@K 对排序位置做对数折扣并归一化，越相关的结果排在越前面得分越高，适合衡量排序质量而不仅是命中与否。"
+    },
+    {
+      "id": "doc-15",
+      "title": "候选集扩召回",
+      "category": "retrieval",
+      "content": "混合检索通常先按各自通道各取 top_k 的三倍作为候选，再融合排序截断到最终 K 条，扩大候选能降低单路召回不足带来的质量损失。"
+    },
+    {
+      "id": "doc-16",
+      "title": "索引刷新与可见性",
+      "category": "retrieval",
+      "content": "新写入的向量进入 Delta 索引后即可被检索到，但持久化与合并发生在后台，刷新接口用于确认索引状态与文档计数是否一致。"
+    },
+    {
+      "id": "doc-17",
+      "title": "Transformers.js 浏览器推理",
+      "category": "edge",
+      "content": "Transformers.js 基于 ONNX Runtime Web 在浏览器中运行 Transformer 模型，通过 pipeline 接口加载 feature-extraction 任务即可在本地生成句向量，无需任何云端接口。"
+    },
+    {
+      "id": "doc-18",
+      "title": "WebGPU 后端",
+      "category": "edge",
+      "content": "WebGPU 通过 navigator.gpu.requestAdapter 获取显卡适配器，把矩阵乘法与归一化算子交给 GPU 执行，显著提升端侧 Embedding 推理速度。"
+    },
+    {
+      "id": "doc-19",
+      "title": "WASM 降级路径",
+      "category": "edge",
+      "content": "当浏览器不支持 WebGPU 或适配器请求失败时，应自动降级到 WebAssembly 后端继续推理，并在界面明确提示当前使用的推理后端。"
+    },
+    {
+      "id": "doc-20",
+      "title": "ONNX 量化精度",
+      "category": "edge",
+      "content": "ONNX 模型可以导出为 fp32、fp16 与 INT8 量化三种精度，INT8 动态量化把权重压缩到 8 位，体积约为 fp32 的四分之一，精度损失通常在可接受范围内。"
+    },
+    {
+      "id": "doc-21",
+      "title": "bge-small-zh 模型",
+      "category": "edge",
+      "content": "Xenova/bge-small-zh-v1.5 是 BAAI bge 系列中文小模型在 HuggingFace 上的 ONNX 版本，输出 512 维向量，适合在浏览器端侧运行。"
+    },
+    {
+      "id": "doc-22",
+      "title": "量化体积与压缩比",
+      "category": "edge",
+      "content": "压缩比按量化前模型文件总体积除以量化后体积计算，fp16 约为 2 倍，INT8 量化约为 4 倍，比较时必须在相同统计口径下进行。"
+    },
+    {
+      "id": "doc-23",
+      "title": "首次加载与预热",
+      "category": "edge",
+      "content": "模型首次加载需要下载权重并编译执行图，耗时远高于后续请求，性能报告必须区分冷加载与预热后的稳定延迟，并重复测量取中位数。"
+    },
+    {
+      "id": "doc-24",
+      "title": "批处理向量化",
+      "category": "edge",
+      "content": "端侧批量向量化比逐条调用吞吐更高，但浏览器主线程与显存占用也会上升，需要在批大小与延迟之间权衡。"
+    },
+    {
+      "id": "doc-25",
+      "title": "Source 证据源",
+      "category": "context",
+      "content": "PowerContext 把用户输入、代码快照和对话日志统一采集为 Source 证据源，保留原始内容与来源元数据，作为后续记忆提炼的唯一依据。"
+    },
+    {
+      "id": "doc-26",
+      "title": "Candidate 审核晋升",
+      "category": "context",
+      "content": "模型提炼出的记忆必须先进入 Candidate 候选池，经过人工或策略审核批准后才能晋升为 Artifact，防止幻觉污染长效记忆。"
+    },
+    {
+      "id": "doc-27",
+      "title": "Memory 与 retire",
+      "category": "context",
+      "content": "Memory 表示跨任务持久存在的事实、决定与约束，当来源被撤回时可以 retire 停用并保留痕迹，而不是直接物理删除。"
+    },
+    {
+      "id": "doc-28",
+      "title": "Handoff 交接包",
+      "category": "context",
+      "content": "Handoff 是临时任务接力包，包含当前目标、已验证事实、阻塞项、下一步与证据引用，接收方按小尺寸 Token 预算无缝接手任务。"
+    },
+    {
+      "id": "doc-29",
+      "title": "PreparedContext 装配",
+      "category": "context",
+      "content": "PreparedContext 按 Token 预算与余弦距离从记忆中裁剪装配上下文，并附上可回查的证据引用，保证模型看到的内容可追溯。"
+    },
+    {
+      "id": "doc-30",
+      "title": "Scope 租户隔离",
+      "category": "context",
+      "content": "Scope 用于隔离不同租户或不同业务场景的 Source 与 Memory，检索时必须限制在调用方指定的数据范围内，避免跨租户污染。"
+    },
+    {
+      "id": "doc-31",
+      "title": "上下文增量传输",
+      "category": "context",
+      "content": "上下文增量传输通过前缀复用协议只发送变化部分，接收端重建出与完整传输一致的上下文，从而降低净传输字节数。"
+    },
+    {
+      "id": "doc-32",
+      "title": "证据页检索",
+      "category": "context",
+      "content": "财报 PDF 等长文档需要按物理页码检索证据，返回的引用必须能沿 MemoryCitation 回查到原文与来源，评测会逐条核对。"
+    },
+    {
+      "id": "doc-33",
+      "title": "可复现性要求",
+      "category": "engineering",
+      "content": "赛题要求按提交说明可以启动应用与数据库并完成全部操作，因此必须提供依赖清单、数据库启动脚本与连接配置，不能依赖未交付的本地状态。"
+    },
+    {
+      "id": "doc-34",
+      "title": "依赖清单与虚拟环境",
+      "category": "engineering",
+      "content": "Python 项目应提供 requirements.txt 并使用虚拟环境安装依赖，锁定 FastAPI、uvicorn、pymysql 与 pytest 等版本，避免评测环境缺包。"
+    },
+    {
+      "id": "doc-35",
+      "title": "pytest 同名模块冲突",
+      "category": "engineering",
+      "content": "多个子目录下存在同名模块时，从仓库根统一收集测试会命中错误文件，需要在测试文件内把本目录插到 sys.path 首位并清理 sys.modules 缓存。"
+    },
+    {
+      "id": "doc-36",
+      "title": "服务端不可用时的降级",
+      "category": "engineering",
+      "content": "数据库不可达时接口应返回明确的 503 与排查提示，而不是抛出未捕获异常导致整个请求栈崩溃。"
+    },
+    {
+      "id": "doc-37",
+      "title": "环境变量配置",
+      "category": "engineering",
+      "content": "连接地址、端口、数据库名与启动参数都应通过环境变量覆盖，并提供 .env.example 作为配置示例，不提交任何真实凭据。"
+    },
+    {
+      "id": "doc-38",
+      "title": "原始数据与测试日志",
+      "category": "engineering",
+      "content": "性能报告应保留原始测量数据与测试脚本，说明设备、数据规模与计时范围，并注明结果来自提交应用的实际运行。"
+    },
+    {
+      "id": "doc-39",
+      "title": "禁用云端推理",
+      "category": "engineering",
+      "content": "赛题明确禁止调用云端推理接口，也禁止预先在服务端算好向量后回放，模型的下载与本地加载不影响推理位置的合规性。"
+    },
+    {
+      "id": "doc-40",
+      "title": "端到端延迟拆分",
+      "category": "engineering",
+      "content": "端到端查询延迟应拆分为查询向量化、网络往返、数据库检索与结果渲染几个阶段分别计时，才能定位瓶颈并说明优化效果。"
+    },
+    {
+      "id": "doc-41",
+      "title": "阶跃星辰赛题要求",
+      "category": "competition",
+      "content": "阶跃星辰赛题要求构建浏览器本地完成向量化、使用 seekdb 做语义与混合检索的迷你知识库，提交可运行 Web 应用、完整源码与一页技术说明。"
+    },
+    {
+      "id": "doc-42",
+      "title": "WebGPU 优先与降级提示",
+      "category": "competition",
+      "content": "赛题要求优先使用 WebGPU 并显式配置推理后端，运行环境不支持时自动降级到 WASM，并在界面上明确提示当前后端。"
+    },
+    {
+      "id": "doc-43",
+      "title": "量化报告要求",
+      "category": "competition",
+      "content": "赛题要求对 embedding 模型采用 INT8 或 FP16 方案，说明处理方式并报告量化前后的模型体积、压缩比与检索质量变化。"
+    },
+    {
+      "id": "doc-44",
+      "title": "检索质量评测方法",
+      "category": "competition",
+      "content": "检索质量应在相同评测集上对比量化前后表现，使用 Recall@K 或 nDCG@K 等指标并说明变化幅度，不能仅凭主观展示判断。"
+    },
+    {
+      "id": "doc-45",
+      "title": "增量导入与集合切换",
+      "category": "competition",
+      "content": "赛题要求管理知识库的增量写入、集合与会话状态，保证连续导入和切换操作后的检索结果与当前知识库一致。"
+    },
+    {
+      "id": "doc-46",
+      "title": "索引刷新后可见",
+      "category": "competition",
+      "content": "赛题要求正确处理数据写入和索引刷新，确保新导入的文档在刷新完成后能够被检索到，评测会写入新文档后立即查询。"
+    },
+    {
+      "id": "doc-47",
+      "title": "高德赛题与 Skill 提交",
+      "category": "competition",
+      "content": "高德地图赛题只需向提测平台上传一个 SKILL.md，写明名称用途、工具调用步骤与回答格式，运行环境与 API Key 由平台配置。"
+    },
+    {
+      "id": "doc-48",
+      "title": "提测平台与执行失败",
+      "category": "competition",
+      "content": "大赛提测平台提供在线提交、自动评测与结果反馈，网络或运行器故障会记为执行失败而不是内容评分，可修正后重新提测。"
+    }
+  ],
+  "queries": [
+    {
+      "id": "q-01",
+      "text": "SeekDB 的向量索引用的是哪个引擎？",
+      "relevant": [
+        "doc-02"
+      ]
+    },
+    {
+      "id": "q-02",
+      "text": "增量索引和基线索引是怎么配合的？",
+      "relevant": [
+        "doc-03"
+      ]
+    },
+    {
+      "id": "q-03",
+      "text": "中文全文检索用什么分词器？",
+      "relevant": [
+        "doc-04"
+      ]
+    },
+    {
+      "id": "q-04",
+      "text": "标量条件和向量距离怎么一起下推？",
+      "relevant": [
+        "doc-05"
+      ]
+    },
+    {
+      "id": "q-05",
+      "text": "数据库的 Fork 沙箱是怎么工作的？",
+      "relevant": [
+        "doc-06"
+      ]
+    },
+    {
+      "id": "q-06",
+      "text": "官方 JavaScript SDK 的包名和入口类是什么？",
+      "relevant": [
+        "doc-07"
+      ]
+    },
+    {
+      "id": "q-07",
+      "text": "内存小的机器启动数据库要设置哪些参数？",
+      "relevant": [
+        "doc-08"
+      ]
+    },
+    {
+      "id": "q-08",
+      "text": "RRF 融合公式里的 k 一般取多少？",
+      "relevant": [
+        "doc-10"
+      ]
+    },
+    {
+      "id": "q-09",
+      "text": "为什么要同时做语义检索和关键词检索？",
+      "relevant": [
+        "doc-11"
+      ]
+    },
+    {
+      "id": "q-10",
+      "text": "混合检索为什么必须在数据库内完成？",
+      "relevant": [
+        "doc-12"
+      ]
+    },
+    {
+      "id": "q-11",
+      "text": "Recall@K 是怎么定义的？",
+      "relevant": [
+        "doc-13"
+      ]
+    },
+    {
+      "id": "q-12",
+      "text": "nDCG 怎么计算排序质量？",
+      "relevant": [
+        "doc-14"
+      ]
+    },
+    {
+      "id": "q-13",
+      "text": "候选集为什么要扩大到三倍？",
+      "relevant": [
+        "doc-15"
+      ]
+    },
+    {
+      "id": "q-14",
+      "text": "Transformers.js 在浏览器里怎么跑 embedding？",
+      "relevant": [
+        "doc-17"
+      ]
+    },
+    {
+      "id": "q-15",
+      "text": "怎么获取 WebGPU 的显卡适配器？",
+      "relevant": [
+        "doc-18"
+      ]
+    },
+    {
+      "id": "q-16",
+      "text": "没有 WebGPU 的时候怎么降级？",
+      "relevant": [
+        "doc-19"
+      ]
+    },
+    {
+      "id": "q-17",
+      "text": "INT8 量化的模型体积大概是多少？",
+      "relevant": [
+        "doc-20"
+      ]
+    },
+    {
+      "id": "q-18",
+      "text": "bge-small-zh 输出多少维向量？",
+      "relevant": [
+        "doc-21"
+      ]
+    },
+    {
+      "id": "q-19",
+      "text": "压缩比应该怎么统计？",
+      "relevant": [
+        "doc-22"
+      ]
+    },
+    {
+      "id": "q-20",
+      "text": "冷加载和预热后的延迟为什么要分开报告？",
+      "relevant": [
+        "doc-23"
+      ]
+    },
+    {
+      "id": "q-21",
+      "text": "PowerContext 里的 Candidate 是什么？",
+      "relevant": [
+        "doc-26"
+      ]
+    },
+    {
+      "id": "q-22",
+      "text": "Handoff 交接包里包含哪些内容？",
+      "relevant": [
+        "doc-28"
+      ]
+    },
+    {
+      "id": "q-23",
+      "text": "上下文是怎么按预算裁剪装配的？",
+      "relevant": [
+        "doc-29"
+      ]
+    },
+    {
+      "id": "q-24",
+      "text": "多个子目录同名模块跑 pytest 会出什么问题？",
+      "relevant": [
+        "doc-35"
+      ]
+    },
+    {
+      "id": "q-25",
+      "text": "数据库连不上时接口应该返回什么？",
+      "relevant": [
+        "doc-36"
+      ]
+    },
+    {
+      "id": "q-26",
+      "text": "赛题对量化报告有哪些要求？",
+      "relevant": [
+        "doc-43"
+      ]
+    },
+    {
+      "id": "q-27",
+      "text": "检索质量应该用什么指标衡量？",
+      "relevant": [
+        "doc-44"
+      ]
+    },
+    {
+      "id": "q-28",
+      "text": "写入新文档后多久能被检索到？",
+      "relevant": [
+        "doc-46"
+      ]
+    },
+    {
+      "id": "q-29",
+      "text": "部署参数应该怎么配置才能复现？",
+      "relevant": [
+        "doc-33",
+        "doc-37"
+      ]
+    },
+    {
+      "id": "q-30",
+      "text": "端到端延迟怎么拆阶段计时？",
+      "relevant": [
+        "doc-40"
+      ]
+    }
+  ]
+}
