@@ -1,13 +1,21 @@
 {
   "name": "stepfun-seekdb-webgpu-kb",
-  "version": "1.0.0",
-  "description": "Browser-side WebGPU/WASM Embedding + OceanBase SeekDB Hybrid Search (seekdb-js / mysql2 compatible)",
+  "version": "1.1.0",
+  "private": true,
+  "description": "Browser-side WebGPU/WASM embedding + SeekDB in-database hybrid search (official seekdb JS SDK adapter)",
   "type": "module",
   "scripts": {
-    "start": "node server_seekdb_js.mjs"
+    "start": "node server_seekdb_js.mjs",
+    "check": "node server_seekdb_js.mjs"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "dependencies": {
-    "seekdb-js": "^0.1.0",
-    "mysql2": "^3.11.0"
+    "seekdb": "^1.4.0"
+  },
+  "//": "seekdb 的 optional peer @seekdb/default-embed 发布包内含 workspace:* 依赖，npm 无法解析；本适配层不依赖默认 embedding，故用 legacy-peer-deps 安装。",
+  "installConfig": {
+    "legacyPeerDeps": true
   }
 }

@@ -1,18 +1,19 @@
 import os
 import time
 from typing import Dict, List, Optional
+
 import pymysql
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
-# 严格遵循远端连接规范：连接 100.72.34.104:2881 远端 SeekDB 实例
-SEEKDB_HOST = os.getenv("SEEKDB_HOST", "100.72.34.104")
-SEEKDB_PORT = int(os.getenv("SEEKDB_PORT", "2881"))
-SEEKDB_USER = os.getenv("SEEKDB_USER", "root")
-SEEKDB_PASS = os.getenv("SEEKDB_PASS", "")
-SEEKDB_DB = os.getenv("SEEKDB_DB", "powercontext")
+import seekdb_bootstrap
+
+# 默认连接本机 seekdb（127.0.0.1:2881），启动时若未运行则自动拉起本地实例；
+# 设置 SEEKDB_HOST 可切换到任意远程实例。详见 seekdb_bootstrap.py 与 README。
+SEEKDB = seekdb_bootstrap.config()
+SEEKDB_STATUS = "尚未初始化"
 
 EMBEDDING_DIM = 512  # 对应浏览器端侧 Xenova/bge-small-zh-v1.5 量化模型维度
 
@@ -26,17 +27,47 @@ SESSION_STORE: Dict[str, List[dict]] = {}
 
 
 def get_db_conn():
-    return pymysql.connect(
-        host=SEEKDB_HOST,
-        port=SEEKDB_PORT,
-        user=SEEKDB_USER,
-        password=SEEKDB_PASS,
-        database=SEEKDB_DB,
+    try:
+        return pymysql.connect(
+            host=SEEKDB.host,
+            port=SEEKDB.port,
+            user=SEEKDB.user,
+            password=SEEKDB.password,
+            database=SEEKDB.database,
+            charset="utf8mb4",
+            cursorclass=pymysql.cursors.DictCursor,
+            autocommit=True,
+            connect_timeout=10,
+        )
+    except pymysql.err.OperationalError as e:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                f"SeekDB 不可用（{SEEKDB.host}:{SEEKDB.port}）：{e}。"
+                "请确认本地 seekdb 已启动（bash scripts/start_seekdb.sh），"
+                "或设置 SEEKDB_HOST 指向可用实例。"
+            ),
+        )
+
+
+def ensure_database():
+    """确保目标 database 存在（seekdb 初始化后默认只有 test 库）。"""
+    conn = pymysql.connect(
+        host=SEEKDB.host,
+        port=SEEKDB.port,
+        user=SEEKDB.user,
+        password=SEEKDB.password,
         charset="utf8mb4",
-        cursorclass=pymysql.cursors.DictCursor,
         autocommit=True,
         connect_timeout=10,
     )
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                f"CREATE DATABASE IF NOT EXISTS `{SEEKDB.database}` DEFAULT CHARACTER SET utf8mb4"
+            )
+    finally:
+        conn.close()
 
 
 def init_seekdb_table():
@@ -104,7 +135,11 @@ class VectorSearchReq(BaseModel):
 
 @app.on_event("startup")
 def startup_event():
+    global SEEKDB_STATUS
+    _, SEEKDB_STATUS = seekdb_bootstrap.ensure_seekdb(SEEKDB)
+    print(f"[seekdb] {SEEKDB_STATUS}")
     try:
+        ensure_database()
         init_seekdb_table()
     except Exception as e:
         print(f"[Warning] Failed to init SeekDB table on startup: {e}")
@@ -112,7 +147,7 @@ def startup_event():
 
 @app.get("/api/status")
 def check_status():
-    """检查远端 SeekDB 实例状态、双索引配置与数据集统计"""
+    """检查 SeekDB 实例状态、双索引配置与数据集统计"""
     start = time.perf_counter()
     try:
         conn = get_db_conn()
@@ -140,8 +175,10 @@ def check_status():
         latency = round((time.perf_counter() - start) * 1000, 2)
         return {
             "status": "online",
-            "seekdb_host": f"{SEEKDB_HOST}:{SEEKDB_PORT}",
-            "database": SEEKDB_DB,
+            "seekdb_host": f"{SEEKDB.host}:{SEEKDB.port}",
+            "seekdb_mode": SEEKDB.mode,
+            "seekdb_status": SEEKDB_STATUS,
+            "database": SEEKDB.database,
             "version": ver,
             "total_documents": cnt,
             "collections": collections,
@@ -150,6 +187,8 @@ def check_status():
             "ping_ms": latency,
             "recent_docs": recent_docs,
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"SeekDB 连接异常: {str(e)}")
 
@@ -592,4 +631,9 @@ def index():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8088)
+
+    uvicorn.run(
+        app,
+        host=os.getenv("APP_HOST", "127.0.0.1"),
+        port=int(os.getenv("APP_PORT", "8088")),
+    )

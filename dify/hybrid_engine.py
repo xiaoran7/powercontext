@@ -12,12 +12,30 @@ from mock_corpus import SAMPLE_CORPUS
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-SEEKDB_HOST = os.environ.get("SEEKDB_HOST", "100.72.34.104")
+SEEKDB_HOST = os.environ.get("SEEKDB_HOST", "127.0.0.1")
 SEEKDB_PORT = int(os.environ.get("SEEKDB_PORT", "2881"))
 SEEKDB_DATABASE = os.environ.get("SEEKDB_DATABASE", "powercontext")
 SEEKDB_USER = os.environ.get("SEEKDB_USER", "root")
 SEEKDB_PASSWORD = os.environ.get("SEEKDB_PASSWORD", "")
 VECTOR_DIM = 512
+
+
+def ensure_seekdb_database() -> None:
+    """确保目标 database 存在（seekdb 初始化后默认只有 test 库），便于本地一键启动。"""
+    conn = pymysql.connect(
+        host=SEEKDB_HOST,
+        port=SEEKDB_PORT,
+        user=SEEKDB_USER,
+        password=SEEKDB_PASSWORD,
+        charset="utf8mb4",
+        autocommit=True,
+        connect_timeout=10,
+    )
+    try:
+        with conn.cursor() as cur:
+            cur.execute(f"CREATE DATABASE IF NOT EXISTS `{SEEKDB_DATABASE}` DEFAULT CHARACTER SET utf8mb4")
+    finally:
+        conn.close()
 
 class HybridSearchEngine:
     def __init__(self):
@@ -44,6 +62,7 @@ class HybridSearchEngine:
 
     def init_database_tables(self):
         """Create table and populate with sample corpus vectors if empty."""
+        ensure_seekdb_database()
         conn = self.get_connection()
         cursor = conn.cursor()
 

@@ -1,0 +1,10 @@
+# 本地 seekdb 数据 / 日志
+seekdb_data/
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+# Node
+node_modules/
+package-lock.json

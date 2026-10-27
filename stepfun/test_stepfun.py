@@ -1,9 +1,33 @@
+import sys
+from pathlib import Path
+
+# 仓库内 dify/minimax/qoder/stepfun 各有一个 server.py；从仓库根统一跑 pytest 时，
+# 裸 `from server import ...` 可能命中别的目录。先把本目录放到 sys.path 首位，
+# 并清掉同名模块缓存，确保导入的是本目录文件。
+_HERE = Path(__file__).resolve().parent
+if str(_HERE) in sys.path:
+    sys.path.remove(str(_HERE))
+sys.path.insert(0, str(_HERE))
+for _stale in ("server", "seekdb_bootstrap"):
+    sys.modules.pop(_stale, None)
+
 import math
+
 from fastapi.testclient import TestClient
-from server import app, EMBEDDING_DIM
+
+from seekdb_bootstrap import config, port_open
+from server import EMBEDDING_DIM, app, startup_event
 
 
 client = TestClient(app)
+
+
+def _ensure_seekdb():
+    """按应用自身逻辑准备 seekdb（本地未运行时自动拉起），与真实启动路径一致。"""
+    startup_event()
+    cfg = config()
+    assert port_open(cfg.host, cfg.port), f"seekdb 未就绪：{cfg.host}:{cfg.port}"
+    return cfg
 
 
 def _make_unit_vector(seed_index: int, secondary_index: int = -1, secondary_weight: float = 0.25) -> list[float]:
@@ -16,16 +40,20 @@ def _make_unit_vector(seed_index: int, secondary_index: int = -1, secondary_weig
 
 
 def test_stepfun_status_and_dual_indexes():
+    cfg = _ensure_seekdb()
     resp = client.get("/api/status")
     assert resp.status_code == 200
     data = resp.json()
     assert data["status"] == "online"
-    assert "100.72.34.104:2881" in data["seekdb_host"]
+    assert data["seekdb_host"] == f"{cfg.host}:{cfg.port}"
+    assert data["seekdb_mode"] in {"local", "remote"}
+    assert data["database"] == cfg.database
     assert any("HNSW" in idx for idx in data["indexes"])
     assert any("FULLTEXT" in idx for idx in data["indexes"])
 
 
 def test_stepfun_insert_and_in_seekdb_hybrid_search():
+    _ensure_seekdb()
     collection = "pytest_stepfun_hybrid"
     docs = [
         {

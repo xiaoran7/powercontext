@@ -477,7 +477,7 @@
         </span>
         <span id="db-badge" class="badge badge-success">
           <span class="badge-dot"></span>
-          SeekDB: 100.72.34.104
+          SeekDB: 本地实例
         </span>
       </div>
     </header>
@@ -752,9 +752,17 @@
     async function refreshStatus() {
       try {
         const resp = await fetch('/api/status');
+        if (!resp.ok) {
+          const detail = await resp.json().catch(() => ({}));
+          throw new Error(detail.detail || `HTTP ${resp.status}`);
+        }
         const data = await resp.json();
+        const dbBadge = document.getElementById('db-badge');
+        if (dbBadge) {
+          dbBadge.innerHTML = `<span class="badge-dot"></span> SeekDB: ${data.seekdb_mode === 'local' ? '本地实例' : data.seekdb_host}`;
+        }
         statSeekdbInfo.textContent = `stepfun_knowledge_base (${data.total_documents} 条 | HNSW+FTS)`;
-        logAudit(`SeekDB 连通性确认: ${data.version} @ ${data.seekdb_host} (双索引就绪)`, 'success');
+        logAudit(`SeekDB 连通性确认: ${data.version} @ ${data.seekdb_host} (${data.seekdb_mode} 模式，双索引就绪)`, 'success');
       } catch (err) {
         statSeekdbInfo.textContent = '连接中断';
         logAudit(`SeekDB 连接失败: ${err.message}`, 'warning');

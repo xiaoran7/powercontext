@@ -16,13 +16,31 @@ try:
 except Exception:
     HAS_POWERCONTEXT = False
 
-SEEKDB_HOST = os.getenv("SEEKDB_HOST", "100.72.34.104")
+SEEKDB_HOST = os.getenv("SEEKDB_HOST", "127.0.0.1")
 SEEKDB_PORT = int(os.getenv("SEEKDB_PORT", "2881"))
 SEEKDB_USER = os.getenv("SEEKDB_USER", "root")
 SEEKDB_PASS = os.getenv("SEEKDB_PASS", "")
 SEEKDB_DB = os.getenv("SEEKDB_DB", "powercontext")
 MINIMAX_API_KEY = os.getenv("MINIMAX_API_KEY", "")
 MINIMAX_BASE_URL = os.getenv("MINIMAX_BASE_URL", "https://api.minimax.chat/v1")
+
+
+def ensure_seekdb_database() -> None:
+    """确保目标 database 存在（seekdb 初始化后默认只有 test 库），便于本地一键启动。"""
+    conn = pymysql.connect(
+        host=SEEKDB_HOST,
+        port=SEEKDB_PORT,
+        user=SEEKDB_USER,
+        password=SEEKDB_PASS,
+        charset="utf8mb4",
+        autocommit=True,
+        connect_timeout=10,
+    )
+    try:
+        with conn.cursor() as cur:
+            cur.execute(f"CREATE DATABASE IF NOT EXISTS `{SEEKDB_DB}` DEFAULT CHARACTER SET utf8mb4")
+    finally:
+        conn.close()
 MINIMAX_MODEL = os.getenv("MINIMAX_MODEL", "MiniMax-M2.7")
 EMBEDDING_DIM = 512
 
@@ -298,7 +316,8 @@ class MiniMaxSDDContextEngine:
         )
 
     def init_and_seed_seekdb(self, force_reset: bool = False) -> Dict[str, Any]:
-        """在远端 SeekDB 中初始化 minimax_sdd_context_store 表（HNSW 向量索引 + IK 全文索引）并写入 6 大维度基准数据"""
+        """在 SeekDB 中初始化 minimax_sdd_context_store 表（HNSW 向量索引 + IK 全文索引）并写入 6 大维度基准数据"""
+        ensure_seekdb_database()
         conn = self.get_conn()
         try:
             with conn.cursor() as cur:

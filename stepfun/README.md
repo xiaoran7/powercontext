@@ -40,7 +40,7 @@
 +------------------------------------------------|----------------------------------+
                                                  v  MySQL Protocol (PyMySQL)
 +-----------------------------------------------------------------------------------+
-|                     OceanBase SeekDB (100.72.34.104:2881)                         |
+|                     OceanBase SeekDB (本地 127.0.0.1:2881)                          |
 |  Table: stepfun_knowledge_base                                                    |
 |  - VECTOR KEY idx_stepfun_hnsw (embedding) WITH (DISTANCE=COSINE, TYPE=HNSW, VSAG)|
 |  - FULLTEXT KEY idx_stepfun_fts (title, content) WITH PARSER ik                   |
@@ -94,25 +94,72 @@ $$\text{RRF}(d) = \frac{1}{k + \text{rank}_{\text{vector}}(d)} + \frac{1}{k + \t
 
 ## 四、快速复现与测试指南
 
-### 1. 环境配置与服务启动
+> 应用默认连接**本机 seekdb（`127.0.0.1:2881`）**：若本地实例未运行，服务启动时会自动拉起，
+> 无需手动配置任何数据库地址。也支持 `SEEKDB_HOST` 指向已有实例（含远程），见 `.env.example`。
+
+### 0. 获取 seekdb（首次运行前）
+
+任选一种方式，装好后 `seekdb` 在 PATH 中即可；也可用 `SEEKDB_BIN` 指定绝对路径：
 
 ```bash
-export SEEKDB_HOST="100.72.34.104"
-export SEEKDB_PORT="2881"
-export SEEKDB_USER="root"
-export SEEKDB_PASS=""
-export SEEKDB_DB="powercontext"
+# 方式 A：官方发行包（Ubuntu / Debian，推荐）
+#   从 https://github.com/oceanbase/seekdb/releases 下载 seekdb_1.4.0-*.deb 后：
+sudo dpkg -i seekdb_1.4.0-*.deb
 
+# 方式 B：从源码编译
+git clone https://github.com/oceanbase/seekdb && cd seekdb && bash build.sh
+
+# 方式 C：已有其它位置的 seekdb 可执行文件
+export SEEKDB_BIN=/path/to/seekdb
+
+# 方式 D：不装本地实例，直接使用已有 seekdb（远程或别人提供的）
+export SEEKDB_HOST=<host> SEEKDB_PORT=2881
+```
+
+### 1. 安装依赖并启动应用
+
+```bash
 cd stepfun
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+
+# 可选：手动先起数据库（不执行也可以，应用会自动拉起）
+bash scripts/start_seekdb.sh --daemon     # Windows: powershell -File scripts/start_seekdb.ps1 -Daemon
+
 python server.py
 ```
 
-浏览器访问 `http://127.0.0.1:8088` 即可查看端侧 WebGPU/WASM 状态看板、一键装载竞赛测试数据集并执行实时混合检索。
+浏览器访问 `http://127.0.0.1:8088`，页面顶部会显示当前推理后端（WebGPU / WASM）与 SeekDB 连接模式（本地 / 远程）。
+
+可用环境变量见 [`.env.example`](./.env.example)；常用项：
+
+| 变量 | 默认值 | 说明 |
+| :--- | :--- | :--- |
+| `SEEKDB_HOST` | `127.0.0.1` | 数据库地址；设为远程地址即切换为远程模式（不会启动本地进程） |
+| `SEEKDB_PORT` | `2881` | 数据库端口 |
+| `SEEKDB_DB` | `powercontext` | 使用的 database，不存在时自动创建 |
+| `SEEKDB_BIN` | 自动查找 | seekdb 可执行文件路径 |
+| `SEEKDB_BASE_DIR` | `stepfun/seekdb_data` | 本地实例的数据 / 日志根目录 |
+| `SEEKDB_AUTO_START` | `1` | 置 0 则只连接已有实例，不自动拉起 |
+| `APP_HOST` / `APP_PORT` | `127.0.0.1` / `8088` | 应用监听地址 |
 
 ### 2. 运行自动化验收测试
 
 ```bash
-pytest stepfun/test_stepfun.py -v
+cd stepfun
+pytest test_stepfun.py -v
+```
+
+测试会在本地 seekdb 未运行时自动拉起实例，并校验：双索引建表、增量写入、**库内单 SQL 混合检索（HNSW + IK 全文 + RRF）**、会话状态、索引刷新与量化基准接口。
+
+### 3. 可选：Node.js / seekdb-js 接入层
+
+`server_seekdb_js.mjs` 使用官方 `seekdb` npm 包演示同样的库内混合检索 SQL：
+
+```bash
+cd stepfun
+npm install
+node server_seekdb_js.mjs     # 连接 seekdb 并跑一次库内混合检索自检
 ```
 
 详细量化精度、端到端延迟拆解与 Recall@K 评测结果请参阅 [`REPORT.md`](./REPORT.md)。

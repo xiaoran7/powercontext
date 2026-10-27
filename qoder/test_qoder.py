@@ -1,3 +1,16 @@
+import sys
+from pathlib import Path
+
+# 仓库内 dify/minimax/qoder/stepfun 各有一个 server.py；从仓库根统一跑 pytest 时，
+# 裸 `from server import ...` 可能命中别的目录。先把本目录放到 sys.path 首位，
+# 并清掉同名模块缓存，确保导入的是本目录文件。
+_HERE = Path(__file__).resolve().parent
+if str(_HERE) in sys.path:
+    sys.path.remove(str(_HERE))
+sys.path.insert(0, str(_HERE))
+for _stale in ("server", "scholar_engine"):
+    sys.modules.pop(_stale, None)
+
 from pathlib import Path
 import time
 

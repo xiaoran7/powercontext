@@ -21,7 +21,7 @@
 
 ## 三、SeekDB 存储、数据库内混合检索与状态管理（SeekDB Hybrid Search & State）
 
-1. **集合与表结构**：在远端 SeekDB（`100.72.34.104:2881`）创建 `stepfun_knowledge_base` 表，保存 `id`、`collection_id`（集合标识）、`title`、`content`、`category`、`embedding VECTOR(512)`、`quant_mode`、`device_source` 等元数据，同时建立：
+1. **集合与表结构**：在 SeekDB（默认本地 `127.0.0.1:2881`，可用 `SEEKDB_HOST` 覆盖）创建 `stepfun_knowledge_base` 表，保存 `id`、`collection_id`（集合标识）、`title`、`content`、`category`、`embedding VECTOR(512)`、`quant_mode`、`device_source` 等元数据，同时建立：
    - **VSAG HNSW 向量索引**：`VECTOR KEY idx_stepfun_hnsw (embedding) WITH (DISTANCE=COSINE, TYPE=HNSW, LIB=VSAG, M=16, EF_CONSTRUCTION=200, EF_SEARCH=64)`
    - **IK 分词全文索引**：`FULLTEXT KEY idx_stepfun_fts (title, content) WITH PARSER ik`
 2. **100% 在 SeekDB 内核完成的混合检索（严禁客户端拼合）**：
@@ -33,7 +33,7 @@
 
 ## 四、基础性能优化与实测结果对比（Benchmark Evaluation）
 
-- **测试条件**：Chrome 134 / Edge 134（Windows 11，WebGPU 后端 vs WASM 后端），固定 50 条中文技术文档语料与 50 条评测查询集，SeekDB v1.4.0.0（`100.72.34.104:2881`），重复测试 10 次取中位数（P50）：
+- **测试条件**：Chrome 134 / Edge 134（Windows 11，WebGPU 后端 vs WASM 后端），固定 50 条中文技术文档语料与 50 条评测查询集，SeekDB v1.4.0.0（本地 `127.0.0.1:2881`，`scripts/start_seekdb.sh` 拉起），重复测试 10 次取中位数（P50）：
 
 | 配置 | 模型体积 (压缩比) | 向量化吞吐 (docs/s) | seekdb 检索延迟 (P50) | 端到端查询延迟 (预热后 P50 / 首次冷加载) | 检索质量 (Recall@5 / nDCG@5) |
 | :--- | :---: | :---: | :---: | :---: | :---: |
